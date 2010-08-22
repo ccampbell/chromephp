@@ -18,7 +18,7 @@
 /**
  * Server Side Chrome PHP debugger class
  *
- * @version 0.1 beta
+ * @version 0.11 beta
  * @package ChromePhp
  * @author Craig Campbell <iamcraigcampbell@gmail.com>
  */
