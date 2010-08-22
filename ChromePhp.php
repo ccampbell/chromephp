@@ -61,7 +61,6 @@ class ChromePhp
      * logs a variable to the console
      *
      * @param mixed $value
-     * @param string $label
      * @return void
      */
     public static function log($value)
