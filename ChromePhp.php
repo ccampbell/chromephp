@@ -40,6 +40,11 @@ class ChromePhp
     protected $_callers = array();
 
     /**
+     * @var array
+     */
+    protected $_labels = array();
+
+    /**
      * @var ChromePhp
      */
     protected static $_instance;
@@ -47,7 +52,10 @@ class ChromePhp
     /**
      * constructor
      */
-    private function __construct() {}
+    private function __construct()
+    {
+        setcookie(self::COOKIE_NAME, null, 1);
+    }
 
     /**
      * gets instance of this class
@@ -82,7 +90,7 @@ class ChromePhp
         $label = null;
         $value = $args[0];
 
-        // if there are two values passed in then the first one is the label
+        // if there are two values passed in then the first one is the albel
         if (count($args) == 2) {
             $label = $args[0];
             $value = $args[1];
