@@ -90,7 +90,7 @@ class ChromePhp
         $label = null;
         $value = $args[0];
 
-        // if there are two values passed in then the first one is the albel
+        // if there are two values passed in then the first one is the label
         if (count($args) == 2) {
             $label = $args[0];
             $value = $args[1];
