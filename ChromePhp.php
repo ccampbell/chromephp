@@ -92,7 +92,7 @@ class ChromePhp
 
         // if there are two values passed in then the first one is the label
         if (count($args) == 2) {
-            $label = $args[0];
+            $label = str_replace(' ', '%20', $args[0]);
             $value = $args[1];
         }
 
