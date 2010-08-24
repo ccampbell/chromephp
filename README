@@ -1,4 +1,4 @@
-version 0.13 beta
+version 0.133 beta
 
 ChromePhp is a PHP class to go along with the ChromePhp Google Chrome extension.
 
@@ -11,4 +11,4 @@ INSTALLATION
 4.  ChromePhp::log('hello world');
 
 More information can be found here:
-http://www.craigiam.com/chromephp
+http://www.chromephp.com

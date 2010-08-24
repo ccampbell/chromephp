@@ -18,7 +18,6 @@
 /**
  * Server Side Chrome PHP debugger class
  *
- * @version 0.13 beta
  * @package ChromePhp
  * @author Craig Campbell <iamcraigcampbell@gmail.com>
  */
@@ -28,6 +27,11 @@ class ChromePhp
      * @var string
      */
     const COOKIE_NAME = 'chromephp_log';
+
+    /**
+     * @var string
+     */
+    const VERSION = '0.133';
 
     /**
      * @var array
@@ -132,7 +136,8 @@ class ChromePhp
         $data = array(
             'data' => $this->_values,
             'backtrace' => $this->_callers,
-            'labels' => $this->_labels);
+            'labels' => $this->_labels,
+            'version' => self::VERSION);
 
         setcookie(self::COOKIE_NAME, json_encode($data), time() + 30);
     }
