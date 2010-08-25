@@ -1,4 +1,5 @@
-version 0.133 beta
+version 0.145 beta
+This class should work with PHP 4 and later, but it has only been tested with PHP 5.
 
 ChromePhp is a PHP class to go along with the ChromePhp Google Chrome extension.
 
@@ -6,7 +7,8 @@ This class allows you to log variables to the Chrome console.
 
 INSTALLATION
 1.  Download the Chrome extension from: https://chrome.google.com/extensions/detail/noaneddfkdjfnfdakjjmocngnfkfehhd
-2.  put ChromePhp.php somewhere in your PHP include path
+2.  Put ChromePhp.php somewhere in your PHP include path
+3.  Click the extension icon on the browser to enable it for the current site
 3.  include 'ChromePhp.php';
 4.  ChromePhp::log('hello world');
 
