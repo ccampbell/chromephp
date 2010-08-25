@@ -31,7 +31,7 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '0.133';
+    const VERSION = '0.145';
 
     /**
      * @var array
@@ -49,6 +49,11 @@ class ChromePhp
     protected $_labels = array();
 
     /**
+     * @var string
+     */
+    protected $_php_version;
+
+    /**
      * @var ChromePhp
      */
     protected static $_instance;
@@ -59,6 +64,7 @@ class ChromePhp
     private function __construct()
     {
         setcookie(self::COOKIE_NAME, null, 1);
+        $this->_php_version = phpversion();
     }
 
     /**
@@ -100,15 +106,111 @@ class ChromePhp
             $value = $args[1];
         }
 
-        // little hack so strings don't end up with + for spaces
-        if (is_string($value)) {
-            $value = str_replace(' ', '%20', $value);
-        }
+        $logger = self::getInstance();
+
+        $value = $logger->_convert($value);
 
         $backtrace = debug_backtrace();
-        $backtrace_message = $backtrace[0]['file'] . '%20:%20' . $backtrace[0]['line'];
+        $backtrace_message = $logger->_encode($backtrace[0]['file'] . ' : ' . $backtrace[0]['line']);
 
-        self::_addToCookie($value, $backtrace_message, $label);
+        $logger->_addToCookie($value, $backtrace_message, $label);
+    }
+
+    /**
+     * encodes a string for cookie
+     *
+     * @param mixed
+     * @return mixed
+     */
+    protected function _encode($value)
+    {
+        if (!is_string($value)) {
+            return $value;
+        }
+        return str_replace(' ', '%20', $value);
+    }
+
+    /**
+     * converts an object to a better format for logging
+     *
+     * @param Object
+     * @return array
+     */
+    protected function _convert($object)
+    {
+        // if this isn't an object then just return it
+        if (!is_object($object)) {
+            return $this->_encode($object);
+        }
+
+        $object_as_array = array();
+
+        // first add the class name
+        $object_as_array[$this->_encode('class')] = get_class($object);
+
+        // loop through object vars
+        $object_vars = get_object_vars($object);
+        foreach ($object_vars as $key => $value) {
+
+            // same instance as parent object
+            if ($value === $object) {
+                $value = 'recursion - parent object';
+            }
+            $object_as_array[$this->_encode($key)] = $this->_convert($value);
+        }
+
+        // can only use reflection in php5+
+        if ($this->_php_version < 5) {
+            return $object_as_array;
+        }
+
+        $reflection = new ReflectionClass($object);
+
+        // loop through the properties and add those
+        foreach ($reflection->getProperties() as $property) {
+
+            // if one of these properties was already added above then ignore it
+            if (array_key_exists($property->getName(), $object_vars)) {
+                continue;
+            }
+            $type = $this->_getPropertyKey($property);
+
+            if ($this->_php_version >= 5.3) {
+                $property->setAccessible(true);
+            }
+
+            $value = $property->getValue($object);
+
+            // same instance as parent object
+            if ($value === $object) {
+                $value = 'recursion - parent object';
+            }
+
+            $object_as_array[$this->_encode($type)] = $this->_convert($value);
+        }
+        return $object_as_array;
+    }
+
+    /**
+     * takes a reflection property and returns a nicely formatted key of the property name
+     *
+     * @param ReflectionProperty
+     * @return string
+     */
+    protected function _getPropertyKey(ReflectionProperty $property)
+    {
+        $static = $property->isStatic() ? ' static' : '';
+        if ($property->isPublic()) {
+            return 'public' . $static . ' ' . $property->getName();
+        }
+
+        if ($property->isProtected()) {
+            return 'protected' . $static . ' ' . $property->getName();
+        }
+
+        if ($property->isPrivate()) {
+            return 'private' . $static . ' ' . $property->getName();
+        }
     }
 
     /**
@@ -117,13 +219,12 @@ class ChromePhp
      * @var mixed
      * @return void
      */
-    protected static function _addToCookie($value, $backtrace, $label)
+    protected function _addToCookie($value, $backtrace, $label)
     {
-        $chrome_php = self::getInstance();
-        $chrome_php->_values[] = $value;
-        $chrome_php->_callers[] = $backtrace;
-        $chrome_php->_labels[] = $label;
-        $chrome_php->_writeCookie();
+        $this->_values[] = $value;
+        $this->_callers[] = $backtrace;
+        $this->_labels[] = $label;
+        $this->_writeCookie();
     }
 
     /**
