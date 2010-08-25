@@ -100,13 +100,13 @@ class ChromePhp
         $label = null;
         $value = $args[0];
 
+        $logger = self::getInstance();
+
         // if there are two values passed in then the first one is the label
         if (count($args) == 2) {
-            $label = $this->_encode($args[0]);
+            $label = $logger->_encode($args[0]);
             $value = $args[1];
         }
-
-        $logger = self::getInstance();
 
         $value = $logger->_convert($value);
 
