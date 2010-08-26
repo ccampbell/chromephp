@@ -31,7 +31,7 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '0.145';
+    const VERSION = '0.1451';
 
     /**
      * @var array
@@ -110,7 +110,7 @@ class ChromePhp
 
         $value = $logger->_convert($value);
 
-        $backtrace = debug_backtrace();
+        $backtrace = debug_backtrace(false);
         $backtrace_message = $logger->_encode($backtrace[0]['file'] . ' : ' . $backtrace[0]['line']);
 
         $logger->_addToCookie($value, $backtrace_message, $label);
@@ -157,11 +157,6 @@ class ChromePhp
                 $value = 'recursion - parent object';
             }
             $object_as_array[$this->_encode($key)] = $this->_convert($value);
-        }
-
-        // can only use reflection in php5+
-        if ($this->_php_version < 5) {
-            return $object_as_array;
         }
 
         $reflection = new ReflectionClass($object);
