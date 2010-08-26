@@ -31,7 +31,7 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '0.1451';
+    const VERSION = '0.146';
 
     /**
      * @var array
@@ -59,11 +59,21 @@ class ChromePhp
     protected static $_instance;
 
     /**
+     * @var string
+     */
+    protected static $_log_path;
+
+    /**
+     * @var string
+     */
+    protected static $_url_path;
+
+    /**
      * constructor
      */
     private function __construct()
     {
-        setcookie(self::COOKIE_NAME, null, 1);
+        $this->_deleteCookie();
         $this->_php_version = phpversion();
     }
 
@@ -217,9 +227,35 @@ class ChromePhp
     protected function _addToCookie($value, $backtrace, $label)
     {
         $this->_values[] = $value;
+
+        $last_backtrace = $this->_getLastUsedBacktrace();
+
+        // if this is logged on the same line for example in a loop, set it to null to save space
+        if ($backtrace == $last_backtrace) {
+            $backtrace = null;
+        }
+
         $this->_callers[] = $backtrace;
         $this->_labels[] = $label;
         $this->_writeCookie();
+    }
+
+    /**
+     * gets the last backtrace that was used on this request
+     *
+     * @return string
+     */
+    protected function _getLastUsedBacktrace()
+    {
+        // filter out empty stuff
+        $backtraces = array_filter($this->_callers, 'strlen');
+        $len = count($backtraces);
+
+        if ($len == 0) {
+            return;
+        }
+
+        return $backtraces[$len - 1];
     }
 
     /**
@@ -230,10 +266,83 @@ class ChromePhp
     protected function _writeCookie()
     {
         $data = array(
+            'labels' => $this->_labels,
             'data' => $this->_values,
             'backtrace' => $this->_callers,
-            'labels' => $this->_labels,
             'version' => self::VERSION);
+
+        $json = json_encode($data);
+
+        // if we are going to use a file then use that
+        if (self::$_log_path !== null) {
+            return $this->_writeToFile($json);
+        }
+
+        // if the data is more than 4000 bytes
+        if (count(str_split($json, 4000)) > 1) {
+            return $this->_cookieMonster();
+        }
+
+        return setcookie(self::COOKIE_NAME, json_encode($data), time() + 30);
+    }
+
+    /**
+     * deletes the main cookie
+     *
+     * @return bool
+     */
+    protected function _deleteCookie()
+    {
+        return setcookie(self::COOKIE_NAME, null, 1);
+    }
+
+    /**
+     * this will allow you to specify a path on disk and a uri to access a static file that can store json
+     *
+     * this allows you to log data that is more than 4k
+     *
+     * @param string path to directory on disk to keep log files
+     * @param string url path to url to access the files
+     */
+    public static function useFile($path, $url)
+    {
+        self::$_log_path = rtrim($path, '/');
+        self::$_url_path = rtrim($url, '/');
+    }
+
+    /**
+     * handles cases when there is too much data
+     *
+     * @param string
+     * @return void
+     */
+    protected function _cookieMonster()
+    {
+        $this->_deleteCookie();
+        throw new Exception('chrome can only handle 4kb in a cookie!  you can try the experimental file mode if you\'d like');
+    }
+
+    /**
+     * writes data to a file
+     *
+     * @param string
+     * @return void
+     */
+    protected function _writeToFile($json)
+    {
+        // if the log path is not setup then create it
+        if (!is_dir(self::$_log_path)) {
+            mkdir(self::$_log_path);
+        }
+
+        $file_name = 'run_' . time() . '.json';
+
+        file_put_contents(self::$_log_path . '/' . $file_name, $json);
+
+        $data = array(
+            'uri' => self::$_url_path . '/' . $file_name,
+            'version' => self::VERSION
+        );
 
         setcookie(self::COOKIE_NAME, json_encode($data), time() + 30);
     }
