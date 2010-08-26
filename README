@@ -1,5 +1,5 @@
 version 0.1451 beta
-This class should work with PHP 4 and later, but it has only been tested with PHP 5.
+This class requires PHP 5 or later.
 
 ChromePhp is a PHP class to go along with the ChromePhp Google Chrome extension.
 
