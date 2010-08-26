@@ -66,12 +66,12 @@ class ChromePhp
     /**
      * @var string
      */
-    protected static $_log_path;
+    protected $_log_path;
 
     /**
      * @var string
      */
-    protected static $_url_path;
+    protected $_url_path;
 
     /**
      * constructor
@@ -280,7 +280,7 @@ class ChromePhp
         $json = json_encode($data);
 
         // if we are going to use a file then use that
-        if (self::$_log_path !== null) {
+        if ($this->_log_path !== null) {
             return $this->_writeToFile($json);
         }
 
@@ -312,8 +312,9 @@ class ChromePhp
      */
     public static function useFile($path, $url)
     {
-        self::$_log_path = rtrim($path, '/');
-        self::$_url_path = rtrim($url, '/');
+        $logger = self::getInstance();
+        $logger->_log_path = rtrim($path, '/');
+        $logger->_url_path = rtrim($url, '/');
     }
 
     /**
@@ -337,16 +338,16 @@ class ChromePhp
     protected function _writeToFile($json)
     {
         // if the log path is not setup then create it
-        if (!is_dir(self::$_log_path)) {
-            mkdir(self::$_log_path);
+        if (!is_dir($this->_log_path)) {
+            mkdir($this->_log_path);
         }
 
         $file_name = 'run_' . $this->_timestamp . '.json';
 
-        file_put_contents(self::$_log_path . '/' . $file_name, $json);
+        file_put_contents($this->_log_path . '/' . $file_name, $json);
 
         $data = array(
-            'uri' => self::$_url_path . '/' . $file_name,
+            'uri' => $this->_url_path . '/' . $file_name,
             'version' => self::VERSION
         );
 
