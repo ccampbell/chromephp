@@ -54,6 +54,11 @@ class ChromePhp
     protected $_php_version;
 
     /**
+     * @var int
+     */
+    protected $_timestamp;
+
+    /**
      * @var ChromePhp
      */
     protected static $_instance;
@@ -75,6 +80,7 @@ class ChromePhp
     {
         $this->_deleteCookie();
         $this->_php_version = phpversion();
+        $this->_timestamp = $this->_php_version >= 5.1 ? $_SERVER['REQUEST_TIME'] : time();
     }
 
     /**
@@ -335,7 +341,7 @@ class ChromePhp
             mkdir(self::$_log_path);
         }
 
-        $file_name = 'run_' . time() . '.json';
+        $file_name = 'run_' . $this->_timestamp . '.json';
 
         file_put_contents(self::$_log_path . '/' . $file_name, $json);
 
