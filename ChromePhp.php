@@ -141,8 +141,7 @@ class ChromePhp
         if (!is_string($value)) {
             return $value;
         }
-        $value = urlencode($value);
-        $value = str_replace('+', '%20', $value);
+        $value = rawurlencode($value);
         return $value;
     }
 
@@ -256,13 +255,8 @@ class ChromePhp
             $backtraces[] = $row[2];
         }
         $backtraces = array_filter($backtraces, 'strlen');
-        $len = count($backtraces);
 
-        if ($len == 0) {
-            return;
-        }
-
-        return $backtraces[$len - 1];
+        return array_pop($backtraces);
     }
 
     /**
