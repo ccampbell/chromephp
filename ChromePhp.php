@@ -31,22 +31,16 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '0.146';
+    const VERSION = '0.147';
 
     /**
      * @var array
      */
-    protected $_values = array();
-
-    /**
-     * @var array
-     */
-    protected $_callers = array();
-
-    /**
-     * @var array
-     */
-    protected $_labels = array();
+    protected $_json = array(
+        'version' => self::VERSION,
+        'columns' => array('label', 'log', 'backtrace'),
+        'rows' => array()
+    );
 
     /**
      * @var string
@@ -59,19 +53,23 @@ class ChromePhp
     protected $_timestamp;
 
     /**
+     * @var int
+     */
+    protected $_bytes_transferred = 0;
+
+    /**
+     * @var array
+     */
+    protected $_settings = array(
+        'log_path' => null,
+        'url_path' => null,
+        'single_file' => true
+    );
+
+    /**
      * @var ChromePhp
      */
     protected static $_instance;
-
-    /**
-     * @var string
-     */
-    protected $_log_path;
-
-    /**
-     * @var string
-     */
-    protected $_url_path;
 
     /**
      * constructor
@@ -129,7 +127,7 @@ class ChromePhp
         $backtrace = debug_backtrace(false);
         $backtrace_message = $logger->_encode($backtrace[0]['file'] . ' : ' . $backtrace[0]['line']);
 
-        $logger->_addToCookie($value, $backtrace_message, $label);
+        $logger->_addRow($label, $value, $backtrace_message);
     }
 
     /**
@@ -143,7 +141,9 @@ class ChromePhp
         if (!is_string($value)) {
             return $value;
         }
-        return str_replace(' ', '%20', $value);
+        $value = urlencode($value);
+        $value = str_replace('+', '%20', $value);
+        return $value;
     }
 
     /**
@@ -230,10 +230,8 @@ class ChromePhp
      * @var mixed
      * @return void
      */
-    protected function _addToCookie($value, $backtrace, $label)
+    protected function _addRow($label, $log, $backtrace)
     {
-        $this->_values[] = $value;
-
         $last_backtrace = $this->_getLastUsedBacktrace();
 
         // if this is logged on the same line for example in a loop, set it to null to save space
@@ -241,8 +239,7 @@ class ChromePhp
             $backtrace = null;
         }
 
-        $this->_callers[] = $backtrace;
-        $this->_labels[] = $label;
+        $this->_json['rows'][] = array($label, $log, $backtrace);
         $this->_writeCookie();
     }
 
@@ -254,7 +251,11 @@ class ChromePhp
     protected function _getLastUsedBacktrace()
     {
         // filter out empty stuff
-        $backtraces = array_filter($this->_callers, 'strlen');
+        $backtraces = array();
+        foreach ($this->_json['rows'] as $row) {
+            $backtraces[] = $row[2];
+        }
+        $backtraces = array_filter($backtraces, 'strlen');
         $len = count($backtraces);
 
         if ($len == 0) {
@@ -271,25 +272,23 @@ class ChromePhp
      */
     protected function _writeCookie()
     {
-        $data = array(
-            'labels' => $this->_labels,
-            'data' => $this->_values,
-            'backtrace' => $this->_callers,
-            'version' => self::VERSION);
-
-        $json = json_encode($data);
+        $json = json_encode($this->_json);
 
         // if we are going to use a file then use that
-        if ($this->_log_path !== null) {
+        if ($this->getSetting('log_path') !== null) {
             return $this->_writeToFile($json);
         }
 
-        // if the data is more than 4000 bytes
-        if (count(str_split($json, 4000)) > 1) {
+        // if we don't have multibyte string length available just use regular string length
+        // this doesn't have to be perfect, just want to prevent sending more data
+        // than chrome or apache can handle in a cookie
+        $this->_bytes_transferred += function_exists('mb_strlen') ? mb_strlen($json) : strlen($json);
+
+        if ($this->_bytes_transferred > 4000) {
             return $this->_cookieMonster();
         }
 
-        return setcookie(self::COOKIE_NAME, json_encode($data), time() + 30);
+        return setcookie(self::COOKIE_NAME, json_encode($json), time() + 30);
     }
 
     /**
@@ -303,6 +302,32 @@ class ChromePhp
     }
 
     /**
+     * adds a setting
+     *
+     * @param string key
+     * @param mixed value
+     * @return void
+     */
+    public function addSetting($key, $value)
+    {
+        $this->_settings[$key] = $value;
+    }
+
+    /**
+     * gets a setting
+     *
+     * @param string key
+     * @return mixed
+     */
+    public function getSetting($key)
+    {
+        if (!isset($this->_settings[$key])) {
+            return null;
+        }
+        return $this->_settings[$key];
+    }
+
+    /**
      * this will allow you to specify a path on disk and a uri to access a static file that can store json
      *
      * this allows you to log data that is more than 4k
@@ -313,8 +338,8 @@ class ChromePhp
     public static function useFile($path, $url)
     {
         $logger = self::getInstance();
-        $logger->_log_path = rtrim($path, '/');
-        $logger->_url_path = rtrim($url, '/');
+        $logger->addSetting('log_path', rtrim($path, '/'));
+        $logger->addSetting('url_path', rtrim($url, '/'));
     }
 
     /**
@@ -338,16 +363,20 @@ class ChromePhp
     protected function _writeToFile($json)
     {
         // if the log path is not setup then create it
-        if (!is_dir($this->_log_path)) {
-            mkdir($this->_log_path);
+        if (!is_dir($this->getSetting('log_path'))) {
+            mkdir($this->getSetting('log_path'));
         }
 
-        $file_name = 'run_' . $this->_timestamp . '.json';
+        $file_name = 'last_run.json';
+        if (!$this->getSetting('single_file')) {
+            $file_name = 'run_' . $this->_timestamp . '.json';
+        }
 
-        file_put_contents($this->_log_path . '/' . $file_name, $json);
+        file_put_contents($this->getSetting('log_path') . '/' . $file_name, $json);
 
         $data = array(
-            'uri' => $this->_url_path . '/' . $file_name,
+            'uri' => $this->getSetting('url_path') . '/' . $file_name,
+            'time' => $this->_timestamp,
             'version' => self::VERSION
         );
 
