@@ -31,16 +31,22 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '0.147';
+    const VERSION = '0.1471';
 
     /**
-     * @var array
+     * @var string
      */
-    protected $_json = array(
-        'version' => self::VERSION,
-        'columns' => array('label', 'log', 'backtrace'),
-        'rows' => array()
-    );
+    const LOG_PATH = 'log_path';
+
+    /**
+     * @var string
+     */
+    const URL_PATH = 'url_path';
+
+    /**
+     * @var string
+     */
+    const STORE_LOGS = 'store_logs';
 
     /**
      * @var string
@@ -53,6 +59,15 @@ class ChromePhp
     protected $_timestamp;
 
     /**
+     * @var array
+     */
+    protected $_json = array(
+        'version' => self::VERSION,
+        'columns' => array('label', 'log', 'backtrace'),
+        'rows' => array()
+    );
+
+    /**
      * @var int
      */
     protected $_bytes_transferred = 0;
@@ -61,9 +76,9 @@ class ChromePhp
      * @var array
      */
     protected $_settings = array(
-        'log_path' => null,
-        'url_path' => null,
-        'single_file' => true
+        self::LOG_PATH => null,
+        self::URL_PATH=> null,
+        self::STORE_LOGS => false
     );
 
     /**
@@ -79,6 +94,7 @@ class ChromePhp
         $this->_deleteCookie();
         $this->_php_version = phpversion();
         $this->_timestamp = $this->_php_version >= 5.1 ? $_SERVER['REQUEST_TIME'] : time();
+        $this->_json['request_uri'] = $_SERVER['REQUEST_URI'];
     }
 
     /**
@@ -269,7 +285,7 @@ class ChromePhp
         $json = json_encode($this->_json);
 
         // if we are going to use a file then use that
-        if ($this->getSetting('log_path') !== null) {
+        if ($this->getSetting(self::LOG_PATH) !== null) {
             return $this->_writeToFile($json);
         }
 
@@ -332,8 +348,8 @@ class ChromePhp
     public static function useFile($path, $url)
     {
         $logger = self::getInstance();
-        $logger->addSetting('log_path', rtrim($path, '/'));
-        $logger->addSetting('url_path', rtrim($url, '/'));
+        $logger->addSetting(self::LOG_PATH, rtrim($path, '/'));
+        $logger->addSetting(self::URL_PATH, rtrim($url, '/'));
     }
 
     /**
@@ -357,19 +373,20 @@ class ChromePhp
     protected function _writeToFile($json)
     {
         // if the log path is not setup then create it
-        if (!is_dir($this->getSetting('log_path'))) {
-            mkdir($this->getSetting('log_path'));
+        if (!is_dir($this->getSetting(self::LOG_PATH))) {
+            mkdir($this->getSetting(self::LOG_PATH));
         }
 
         $file_name = 'last_run.json';
-        if (!$this->getSetting('single_file')) {
+        if ($this->getSetting(self::STORE_LOGS)) {
             $file_name = 'run_' . $this->_timestamp . '.json';
         }
 
-        file_put_contents($this->getSetting('log_path') . '/' . $file_name, $json);
+        file_put_contents($this->getSetting(self::LOG_PATH) . '/' . $file_name, $json);
 
         $data = array(
-            'uri' => $this->getSetting('url_path') . '/' . $file_name,
+            'uri' => $this->getSetting(self::URL_PATH) . '/' . $file_name,
+            'request_uri' => $_SERVER['REQUEST_URI'],
             'time' => $this->_timestamp,
             'version' => self::VERSION
         );
