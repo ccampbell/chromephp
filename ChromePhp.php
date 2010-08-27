@@ -157,6 +157,11 @@ class ChromePhp
         if (!is_string($value)) {
             return $value;
         }
+
+        // temporary hack so we don't break with new line characters
+        if (strpos($value, "\n") || strpos($value, "\r"))
+            return $value;
+
         $value = rawurlencode($value);
         return $value;
     }
