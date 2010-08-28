@@ -31,7 +31,7 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '0.1471';
+    const VERSION = '0.1475';
 
     /**
      * @var string
@@ -154,15 +154,6 @@ class ChromePhp
      */
     protected function _encode($value)
     {
-        if (!is_string($value)) {
-            return $value;
-        }
-
-        // temporary hack so we don't break with new line characters
-        if (strpos($value, "\n") || strpos($value, "\r"))
-            return $value;
-
-        $value = rawurlencode($value);
         return $value;
     }
 
@@ -303,7 +294,7 @@ class ChromePhp
             return $this->_cookieMonster();
         }
 
-        return setcookie(self::COOKIE_NAME, json_encode($json), time() + 30);
+        return $this->_setCookie($json);
     }
 
     /**
@@ -314,6 +305,20 @@ class ChromePhp
     protected function _deleteCookie()
     {
         return setcookie(self::COOKIE_NAME, null, 1);
+    }
+
+    /**
+     * sets the main cookie
+     *
+     * @param array
+     * @return bool
+     */
+    protected function _setCookie($data)
+    {
+        $data = json_encode($data);
+        $data = utf8_encode($data);
+        $data = base64_encode($data);
+        return setcookie(self::COOKIE_NAME, $data, time() + 30);
     }
 
     /**
@@ -396,6 +401,6 @@ class ChromePhp
             'version' => self::VERSION
         );
 
-        setcookie(self::COOKIE_NAME, json_encode($data), time() + 30);
+        return $this->_setCookie($data);
     }
 }
