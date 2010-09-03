@@ -186,7 +186,7 @@ class ChromePhp
         $value = $logger->_convert($value);
 
         $backtrace = debug_backtrace(false);
-        $backtrace_message = $backtrace[0]['file'] . ' : ' . $backtrace[0]['line'];
+        $backtrace_message = $backtrace[1]['file'] . ' : ' . $backtrace[1]['line'];
 
         $logger->_addRow($label, $value, $backtrace_message, $type);
     }
@@ -407,7 +407,7 @@ class ChromePhp
         $this->_deleteCookie();
 
         $this->_error_triggered = true;
-        $error_text = 'cookie size of 4kb exceeded! try ChromePhp::useFile() to pull the log data from disk';
+        $error_text = 'cookie size of 4kb exceeded! try ChromePHP::useFile() to pull the log data from disk';
 
         $json = $this->_json;
         $json['rows'] = array(array(null, $error_text, '', 'warn'));
