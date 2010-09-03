@@ -407,7 +407,7 @@ class ChromePhp
         $this->_deleteCookie();
 
         $this->_error_triggered = true;
-        $error_text = 'cookie size of 4kb exceeded! try ChromePHP::useFile() to pull the log data from disk';
+        $error_text = 'cookie size of 4kb exceeded! try ChromePhp::useFile() to pull the log data from disk';
 
         $json = $this->_json;
         $json['rows'] = array(array(null, $error_text, '', 'warn'));
