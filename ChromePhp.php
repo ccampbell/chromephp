@@ -31,7 +31,7 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '0.1475';
+    const VERSION = '0.2';
 
     /**
      * @var string
@@ -63,7 +63,7 @@ class ChromePhp
      */
     protected $_json = array(
         'version' => self::VERSION,
-        'columns' => array('label', 'log', 'backtrace'),
+        'columns' => array('label', 'log', 'backtrace', 'type'),
         'rows' => array()
     );
 
@@ -71,6 +71,11 @@ class ChromePhp
      * @var int
      */
     protected $_bytes_transferred = 0;
+
+    /**
+     * @var bool
+     */
+    protected $_error_triggered = false;
 
     /**
      * @var array
@@ -119,7 +124,43 @@ class ChromePhp
      */
     public static function log()
     {
-        $args = func_get_args();
+        return self::_log(func_get_args() + array('type' => ''));
+    }
+
+    /**
+     * logs a warning to the console
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return void
+     */
+    public static function warn()
+    {
+        return self::_log(func_get_args() + array('type' => 'warn'));
+    }
+
+    /**
+     * logs an error to the console
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return void
+     */
+    public static function error()
+    {
+        return self::_log(func_get_args() + array('type' => 'error'));
+    }
+
+    /**
+     * internal logging call
+     *
+     * @param string $type
+     * @return void
+     */
+    protected static function _log(array $args)
+    {
+        $type = $args['type'];
+        unset($args['type']);
 
         // nothing passed in, don't do anything
         if (count($args) == 0) {
@@ -132,29 +173,22 @@ class ChromePhp
 
         $logger = self::getInstance();
 
+        if ($logger->_error_triggered) {
+            return;
+        }
+
         // if there are two values passed in then the first one is the label
         if (count($args) == 2) {
-            $label = $logger->_encode($args[0]);
+            $label = $args[0];
             $value = $args[1];
         }
 
         $value = $logger->_convert($value);
 
         $backtrace = debug_backtrace(false);
-        $backtrace_message = $logger->_encode($backtrace[0]['file'] . ' : ' . $backtrace[0]['line']);
+        $backtrace_message = $backtrace[0]['file'] . ' : ' . $backtrace[0]['line'];
 
-        $logger->_addRow($label, $value, $backtrace_message);
-    }
-
-    /**
-     * encodes a string for cookie
-     *
-     * @param mixed
-     * @return mixed
-     */
-    protected function _encode($value)
-    {
-        return $value;
+        $logger->_addRow($label, $value, $backtrace_message, $type);
     }
 
     /**
@@ -167,13 +201,13 @@ class ChromePhp
     {
         // if this isn't an object then just return it
         if (!is_object($object)) {
-            return $this->_encode($object);
+            return $object;
         }
 
         $object_as_array = array();
 
         // first add the class name
-        $object_as_array[$this->_encode('class')] = get_class($object);
+        $object_as_array['class'] = get_class($object);
 
         // loop through object vars
         $object_vars = get_object_vars($object);
@@ -183,7 +217,7 @@ class ChromePhp
             if ($value === $object) {
                 $value = 'recursion - parent object';
             }
-            $object_as_array[$this->_encode($key)] = $this->_convert($value);
+            $object_as_array[$key] = $this->_convert($value);
         }
 
         $reflection = new ReflectionClass($object);
@@ -208,7 +242,7 @@ class ChromePhp
                 $value = 'recursion - parent object';
             }
 
-            $object_as_array[$this->_encode($type)] = $this->_convert($value);
+            $object_as_array[$type] = $this->_convert($value);
         }
         return $object_as_array;
     }
@@ -241,7 +275,7 @@ class ChromePhp
      * @var mixed
      * @return void
      */
-    protected function _addRow($label, $log, $backtrace)
+    protected function _addRow($label, $log, $backtrace, $type)
     {
         $last_backtrace = $this->_getLastUsedBacktrace();
 
@@ -250,7 +284,7 @@ class ChromePhp
             $backtrace = null;
         }
 
-        $this->_json['rows'][] = array($label, $log, $backtrace);
+        $this->_json['rows'][] = array($label, $log, $backtrace, $type);
         $this->_writeCookie();
     }
 
@@ -371,7 +405,14 @@ class ChromePhp
     protected function _cookieMonster()
     {
         $this->_deleteCookie();
-        throw new Exception('chrome can only handle 4kb in a cookie!  you can try the experimental file mode if you\'d like');
+
+        $this->_error_triggered = true;
+        $error_text = 'cookie size of 4kb exceeded! try ChromePHP::useFile() to pull the log data from disk';
+
+        $json = $this->_json;
+        $json['rows'] = array(array(null, $error_text, '', 'warn'));
+
+        return $this->_setCookie($json);
     }
 
     /**
