@@ -31,7 +31,7 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '0.2';
+    const VERSION = '2.1.0';
 
     /**
      * @var string
@@ -66,6 +66,11 @@ class ChromePhp
         'columns' => array('label', 'log', 'backtrace', 'type'),
         'rows' => array()
     );
+
+    /**
+     * @var array
+     */
+    protected $_backtraces = array();
 
     /**
      * @var int
@@ -277,32 +282,45 @@ class ChromePhp
      */
     protected function _addRow($label, $log, $backtrace, $type)
     {
-        $last_backtrace = $this->_getLastUsedBacktrace();
-
         // if this is logged on the same line for example in a loop, set it to null to save space
-        if ($backtrace == $last_backtrace) {
+        if (in_array($backtrace, $this->_backtraces)) {
             $backtrace = null;
         }
 
+        if ($backtrace !== null) {
+            $this->_backtraces[] = $backtrace;
+        }
+
+        $this->_clearRows();
         $this->_json['rows'][] = array($label, $log, $backtrace, $type);
         $this->_writeCookie();
     }
 
     /**
-     * gets the last backtrace that was used on this request
+     * clears existing rows in special cases
      *
-     * @return string
+     * for ajax requests chrome will be listening for cookie changes
+     * this means we can send the cookie data one row at a time as it comes in
+     *
+     * @return void
      */
-    protected function _getLastUsedBacktrace()
+    protected function _clearRows()
     {
-        // filter out empty stuff
-        $backtraces = array();
-        foreach ($this->_json['rows'] as $row) {
-            $backtraces[] = $row[2];
+        // if we are in file mode we want the file to have all the log data
+        if ($this->getSetting(self::LOG_PATH) !== null) {
+            return;
         }
-        $backtraces = array_filter($backtraces, 'strlen');
 
-        return array_pop($backtraces);
+        // X-Requested-With header not present or not equal to XMLHttpRequest
+        if (!isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+            return;
+        }
+
+        if ($_SERVER['HTTP_X_REQUESTED_WITH'] != 'XMLHttpRequest') {
+            return;
+        }
+
+        $this->_json['rows'] = array();
     }
 
     /**
