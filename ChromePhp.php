@@ -31,7 +31,7 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '2.1.0';
+    const VERSION = '2.1.1';
 
     /**
      * @var string
@@ -240,7 +240,11 @@ class ChromePhp
                 $property->setAccessible(true);
             }
 
-            $value = $property->getValue($object);
+            try {
+                $value = $property->getValue($object);
+            } catch (ReflectionException $e) {
+                $value = 'only PHP 5.3 can access private/protected properties';
+            }
 
             // same instance as parent object
             if ($value === $object) {
