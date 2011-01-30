@@ -51,6 +51,11 @@ class ChromePhp
     /**
      * @var string
      */
+    const BACKTRACE_LEVEL = 'backtrace_level';
+
+    /**
+     * @var string
+     */
     const LOG = 'log';
 
     /**
@@ -108,7 +113,8 @@ class ChromePhp
     protected $_settings = array(
         self::LOG_PATH => null,
         self::URL_PATH=> null,
-        self::STORE_LOGS => false
+        self::STORE_LOGS => false,
+        self::BACKTRACE_LEVEL => 1
     );
 
     /**
@@ -220,7 +226,12 @@ class ChromePhp
         $value = $logger->_convert($value);
 
         $backtrace = debug_backtrace(false);
-        $backtrace_message = $backtrace[1]['file'] . ' : ' . $backtrace[1]['line'];
+        $level = $logger->getSetting(self::BACKTRACE_LEVEL);
+
+        $backtrace_message = 'unknown';
+        if (isset($backtrace[$level]['file']) && isset($backtrace[$level]['line'])) {
+            $backtrace_message = $backtrace[$level]['file'] . ' : ' . $backtrace[$level]['line'];
+        }
 
         $logger->_addRow($label, $value, $backtrace_message, $type);
     }
