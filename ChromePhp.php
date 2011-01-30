@@ -56,6 +56,11 @@ class ChromePhp
     /**
      * @var string
      */
+    const MAX_TRANSFER = 'max_transfer';
+
+    /**
+     * @var string
+     */
     const LOG = 'log';
 
     /**
@@ -98,11 +103,6 @@ class ChromePhp
     protected $_backtraces = array();
 
     /**
-     * @var int
-     */
-    protected $_bytes_transferred = 0;
-
-    /**
      * @var bool
      */
     protected $_error_triggered = false;
@@ -114,7 +114,8 @@ class ChromePhp
         self::LOG_PATH => null,
         self::URL_PATH=> null,
         self::STORE_LOGS => false,
-        self::BACKTRACE_LEVEL => 1
+        self::BACKTRACE_LEVEL => 1,
+        self::MAX_TRANSFER => 3000
     );
 
     /**
@@ -336,7 +337,14 @@ class ChromePhp
         }
 
         $this->_clearRows();
-        $this->_json['rows'][] = array($label, $log, $backtrace, $type);
+        $row = array($label, $log, $backtrace, $type);
+
+        // if we are in cookie mode and the row won't fit then don't add it
+        if ($this->getSetting(self::LOG_PATH) === null && !$this->_willFit($row)) {
+            return $this->_cookieMonster();
+        }
+
+        $this->_json['rows'][] = $row;
         $this->_writeCookie();
     }
 
@@ -368,29 +376,44 @@ class ChromePhp
     }
 
     /**
+     * determines if this row will fit in the cookie
+     *
+     * @param array $row
+     * @return bool
+     */
+    protected function _willFit($row)
+    {
+        $json = $this->_json;
+        $json['rows'][] = $row;
+
+        // if we don't have multibyte string length available just use regular string length
+        // this doesn't have to be perfect, just want to prevent sending more data
+        // than chrome or apache can handle in a cookie
+        $encoded_string = $this->_encode($json);
+        $size = function_exists('mb_strlen') ? mb_strlen($encoded_string) : strlen($encoded_string);
+
+        // if the size is greater than the max transfer size
+        if ($size > $this->getSetting(self::MAX_TRANSFER)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * writes the cookie
      *
      * @return bool
      */
     protected function _writeCookie()
     {
-        $json = json_encode($this->_json);
-
         // if we are going to use a file then use that
+        // here we only want to json_encode
         if ($this->getSetting(self::LOG_PATH) !== null) {
-            return $this->_writeToFile($json);
+            return $this->_writeToFile(json_encode($this->_json));
         }
 
-        // if we don't have multibyte string length available just use regular string length
-        // this doesn't have to be perfect, just want to prevent sending more data
-        // than chrome or apache can handle in a cookie
-        $this->_bytes_transferred += function_exists('mb_strlen') ? mb_strlen($json) : strlen($json);
-
-        if ($this->_bytes_transferred > 4000) {
-            return $this->_cookieMonster();
-        }
-
-        return $this->_setCookie($json);
+        return $this->_setCookie($this->_json);
     }
 
     /**
@@ -404,6 +427,17 @@ class ChromePhp
     }
 
     /**
+     * encodes the data to be sent along with the request
+     *
+     * @param array $data
+     * @return string
+     */
+    protected function _encode($data)
+    {
+        return base64_encode(utf8_encode(json_encode($data)));
+    }
+
+    /**
      * sets the main cookie
      *
      * @param array
@@ -411,10 +445,7 @@ class ChromePhp
      */
     protected function _setCookie($data)
     {
-        $data = json_encode($data);
-        $data = utf8_encode($data);
-        $data = base64_encode($data);
-        return setcookie(self::COOKIE_NAME, $data, time() + 30);
+        return setcookie(self::COOKIE_NAME, $this->_encode($data), time() + 30);
     }
 
     /**
@@ -466,14 +497,11 @@ class ChromePhp
      */
     protected function _cookieMonster()
     {
-        $this->_deleteCookie();
-
         $this->_error_triggered = true;
 
-        $json = $this->_json;
-        $json['rows'] = array(array(null, self::COOKIE_SIZE_WARNING, '', 'warn'));
+        $this->_json['rows'][] = array(null, self::COOKIE_SIZE_WARNING, 'ChromePhp', 'warn');
 
-        return $this->_setCookie($json);
+        return $this->_writeCookie();
     }
 
     /**
