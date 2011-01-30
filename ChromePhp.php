@@ -51,6 +51,26 @@ class ChromePhp
     /**
      * @var string
      */
+    const LOG = 'log';
+
+    /**
+     * @var string
+     */
+    const WARN = 'warn';
+
+    /**
+     * @var string
+     */
+    const ERROR = 'error';
+
+    /**
+     * @var string
+     */
+    const COOKIE_SIZE_WARNING = 'cookie size of 4kb exceeded! try ChromePhp::useFile() to pull the log data from disk';
+
+    /**
+     * @var string
+     */
     protected $_php_version;
 
     /**
@@ -123,20 +143,29 @@ class ChromePhp
     /**
      * logs a variable to the console
      *
-     * @param string $key
-     * @param mixed $value
+     * @param string label
+     * @param mixed value
+     * @param string severity ChromePhp::LOG || ChromePhp::WARN || ChromePhp::ERROR
      * @return void
      */
     public static function log()
     {
-        return self::_log(func_get_args() + array('type' => ''));
+        $args = func_get_args();
+        $severity = count($args) == 3 ? array_pop($args) : '';
+
+        // save precious bytes in the cookie
+        if ($severity == self::LOG) {
+            $severity = '';
+        }
+
+        return self::_log($args + array('type' => $severity));
     }
 
     /**
      * logs a warning to the console
      *
-     * @param string $key
-     * @param mixed $value
+     * @param string label
+     * @param mixed value
      * @return void
      */
     public static function warn()
@@ -147,8 +176,8 @@ class ChromePhp
     /**
      * logs an error to the console
      *
-     * @param string $key
-     * @param mixed $value
+     * @param string label
+     * @param mixed value
      * @return void
      */
     public static function error()
@@ -429,10 +458,9 @@ class ChromePhp
         $this->_deleteCookie();
 
         $this->_error_triggered = true;
-        $error_text = 'cookie size of 4kb exceeded! try ChromePhp::useFile() to pull the log data from disk';
 
         $json = $this->_json;
-        $json['rows'] = array(array(null, $error_text, '', 'warn'));
+        $json['rows'] = array(array(null, self::COOKIE_SIZE_WARNING, '', 'warn'));
 
         return $this->_setCookie($json);
     }
