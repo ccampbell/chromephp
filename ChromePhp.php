@@ -31,7 +31,7 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '2.2';
+    const VERSION = '2.2.1';
 
     /**
      * @var string
@@ -72,6 +72,21 @@ class ChromePhp
      * @var string
      */
     const ERROR = 'error';
+
+    /**
+     * @var string
+     */
+    const GROUP = 'group';
+
+    /**
+     * @var string
+     */
+    const GROUP_END = 'groupEnd';
+
+    /**
+     * @var string
+     */
+    const GROUP_COLLAPSED = 'groupCollapsed';
 
     /**
      * @var string
@@ -177,7 +192,7 @@ class ChromePhp
      */
     public static function warn()
     {
-        return self::_log(func_get_args() + array('type' => 'warn'));
+        return self::_log(func_get_args() + array('type' => self::WARN));
     }
 
     /**
@@ -189,7 +204,37 @@ class ChromePhp
      */
     public static function error()
     {
-        return self::_log(func_get_args() + array('type' => 'error'));
+        return self::_log(func_get_args() + array('type' => self::ERROR));
+    }
+
+    /**
+     * sends a group log
+     *
+     * @param string value
+     */
+    public static function group()
+    {
+        return self::_log(func_get_args() + array('type' => self::GROUP));
+    }
+
+    /**
+     * sends a collapsed group log
+     *
+     * @param string value
+     */
+    public static function groupCollapsed()
+    {
+        return self::_log(func_get_args() + array('type' => self::GROUP_COLLAPSED));
+    }
+
+    /**
+     * ends a group log
+     *
+     * @param string value
+     */
+    public static function groupEnd()
+    {
+        return self::_log(func_get_args() + array('type' => self::GROUP_END));
     }
 
     /**
@@ -499,7 +544,7 @@ class ChromePhp
     {
         $this->_error_triggered = true;
 
-        $this->_json['rows'][] = array(null, self::COOKIE_SIZE_WARNING, 'ChromePhp', 'warn');
+        $this->_json['rows'][] = array(null, self::COOKIE_SIZE_WARNING, 'ChromePhp', self::WARN);
 
         return $this->_writeCookie();
     }
