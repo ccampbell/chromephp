@@ -31,7 +31,7 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '2.2.1';
+    const VERSION = '2.2.2';
 
     /**
      * @var string
@@ -249,13 +249,13 @@ class ChromePhp
         unset($args['type']);
 
         // nothing passed in, don't do anything
-        if (count($args) == 0) {
+        if (count($args) == 0 && $type != self::GROUP_END) {
             return;
         }
 
         // default to single
         $label = null;
-        $value = $args[0];
+        $value = isset($args[0]) ? $args[0] : '';
 
         $logger = self::getInstance();
 
