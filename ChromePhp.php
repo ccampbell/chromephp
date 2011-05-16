@@ -139,6 +139,13 @@ class ChromePhp
     protected static $_instance;
 
     /**
+     * Prevent recursion when working with objects refering to each other
+     *
+     * @var array
+     */
+    protected static $processed = array();
+
+    /**
      * constructor
      */
     private function __construct()
@@ -269,6 +276,7 @@ class ChromePhp
             $value = $args[1];
         }
 
+        self::$processed = array();
         $value = $logger->_convert($value);
 
         $backtrace = debug_backtrace(false);
@@ -305,7 +313,7 @@ class ChromePhp
         foreach ($object_vars as $key => $value) {
 
             // same instance as parent object
-            if ($value === $object) {
+            if ($value === $object || in_array($value, self::$processed, true)) {
                 $value = 'recursion - parent object';
             }
             $object_as_array[$key] = $this->_convert($value);
@@ -333,7 +341,7 @@ class ChromePhp
             }
 
             // same instance as parent object
-            if ($value === $object) {
+            if ($value === $object || in_array($value, self::$processed, true)) {
                 $value = 'recursion - parent object';
             }
 
