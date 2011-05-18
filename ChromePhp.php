@@ -518,6 +518,19 @@ class ChromePhp
     }
 
     /**
+     * add ability to set multiple settings in one call
+     *
+     * @param array $settings
+     * @return void
+     */
+    public function addSettings(array $settings)
+    {
+        foreach ($settings as $key => $value) {
+            $this->addSetting($key, $value);
+        }
+    }
+
+    /**
      * gets a setting
      *
      * @param string key
