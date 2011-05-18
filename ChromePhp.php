@@ -81,6 +81,11 @@ class ChromePhp
     /**
      * @var string
      */
+    const INFO = 'info';
+
+    /**
+     * @var string
+     */
     const GROUP_END = 'groupEnd';
 
     /**
@@ -222,6 +227,16 @@ class ChromePhp
     public static function group()
     {
         return self::_log(func_get_args() + array('type' => self::GROUP));
+    }
+
+    /**
+     * sends an info log
+     *
+     * @param string value
+     */
+    public static function info()
+    {
+        return self::_log(func_get_args() + array('type' => self::INFO));
     }
 
     /**
