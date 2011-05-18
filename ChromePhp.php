@@ -139,11 +139,11 @@ class ChromePhp
     protected static $_instance;
 
     /**
-     * Prevent recursion when working with objects refering to each other
+     * Prevent recursion when working with objects referring to each other
      *
      * @var array
      */
-    protected static $processed = array();
+    protected $_processed = array();
 
     /**
      * constructor
@@ -276,7 +276,7 @@ class ChromePhp
             $value = $args[1];
         }
 
-        self::$processed = array();
+        $logger->_processed = array();
         $value = $logger->_convert($value);
 
         $backtrace = debug_backtrace(false);
@@ -305,7 +305,7 @@ class ChromePhp
 
         //Mark this object as processed so we don't convert it twice and it
         //Also avoid recursion when objects refer to each other
-        self::$processed[] = $object;
+        $this->_processed[] = $object;
 
         $object_as_array = array();
 
@@ -317,7 +317,7 @@ class ChromePhp
         foreach ($object_vars as $key => $value) {
 
             // same instance as parent object
-            if ($value === $object || in_array($value, self::$processed, true)) {
+            if ($value === $object || in_array($value, $this->_processed, true)) {
                 $value = 'recursion - parent object [' . get_class($value) . ']';
             }
             $object_as_array[$key] = $this->_convert($value);
@@ -345,7 +345,7 @@ class ChromePhp
             }
 
             // same instance as parent object
-            if ($value === $object || in_array($value, self::$processed, true)) {
+            if ($value === $object || in_array($value, $this->_processed, true)) {
                 $value = 'recursion - parent object [' . get_class($value) . ']';
             }
 
