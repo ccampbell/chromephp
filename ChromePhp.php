@@ -157,7 +157,7 @@ class ChromePhp
         $args = func_get_args();
         $severity = count($args) == 3 ? array_pop($args) : '';
 
-        // save precious bytes in the cookie
+        // save precious bytes
         if ($severity == self::LOG) {
             $severity = '';
         }
@@ -358,7 +358,7 @@ class ChromePhp
     }
 
     /**
-     * adds a value to the cookie
+     * adds a value to the data array
      *
      * @var mixed
      * @return void
