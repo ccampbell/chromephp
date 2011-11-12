@@ -291,7 +291,7 @@ class ChromePhp
         $object_as_array = array();
 
         // first add the class name
-        $object_as_array['x_class_name'] = get_class($object);
+        $object_as_array['___class_name'] = get_class($object);
 
         // loop through object vars
         $object_vars = get_object_vars($object);
