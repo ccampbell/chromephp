@@ -304,7 +304,7 @@ class ChromePhp
             $object_as_array[$key] = $this->_convert($value);
         }
 
-        $reflection = new ReflectionClass($object);
+        $reflection = new \ReflectionClass($object);
 
         // loop through the properties and add those
         foreach ($reflection->getProperties() as $property) {
@@ -321,7 +321,7 @@ class ChromePhp
 
             try {
                 $value = $property->getValue($object);
-            } catch (ReflectionException $e) {
+            } catch (\ReflectionException $e) {
                 $value = 'only PHP 5.3 can access private/protected properties';
             }
 
@@ -341,7 +341,7 @@ class ChromePhp
      * @param ReflectionProperty
      * @return string
      */
-    protected function _getPropertyKey(ReflectionProperty $property)
+    protected function _getPropertyKey(\ReflectionProperty $property)
     {
         $static = $property->isStatic() ? ' static' : '';
         if ($property->isPublic()) {
