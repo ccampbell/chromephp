@@ -126,6 +126,11 @@ class ChromePhp
      */
     private function __construct()
     {
+        if (PHP_SAPI == 'cli')
+        {
+            return;
+        }
+        
         $this->_php_version = phpversion();
         $this->_timestamp = $this->_php_version >= 5.1 ? $_SERVER['REQUEST_TIME'] : time();
         $this->_json['request_uri'] = $_SERVER['REQUEST_URI'];
@@ -139,7 +144,7 @@ class ChromePhp
     public static function getInstance()
     {
         if (self::$_instance === null) {
-            self::$_instance = new ChromePhp();
+            self::$_instance = new self();
         }
         return self::$_instance;
     }
@@ -237,6 +242,11 @@ class ChromePhp
      */
     protected static function _log(array $args)
     {
+        if (PHP_SAPI == 'cli')
+        {
+            return;
+        }
+        
         $type = $args['type'];
         unset($args['type']);
 
