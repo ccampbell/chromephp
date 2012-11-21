@@ -26,7 +26,7 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '3.0';
+    const VERSION = '3.0.1';
 
     /**
      * @var string
@@ -139,7 +139,7 @@ class ChromePhp
     public static function getInstance()
     {
         if (self::$_instance === null) {
-            self::$_instance = new ChromePhp();
+            self::$_instance = new self();
         }
         return self::$_instance;
     }
