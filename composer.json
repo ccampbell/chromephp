@@ -1,0 +1,24 @@
+{
+    "name": "ccampbell/chromephp",
+    "type": "library",
+    "description": "Log variables to the Chrome console (via ChromePhp Google Chrome extension).",
+    "keywords": ["log","logging"],
+    "homepage": "https://github.com/ccampbell/chromephp",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Craig Campbell",
+            "email": "iamcraigcampbell@gmail.com",
+            "homepage": "http://craig.is",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.*"
+    },
+    "autoload": {
+        "psr-0": {
+            "ChromePhp": ""
+        }
+    }
+}
