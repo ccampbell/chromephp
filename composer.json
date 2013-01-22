@@ -3,8 +3,8 @@
     "type": "library",
     "description": "Log variables to the Chrome console (via ChromePhp Google Chrome extension).",
     "keywords": ["log","logging"],
-    "homepage": "https://github.com/ccampbell/chromephp",
-    "license": "MIT",
+    "homepage": "http://chromephp.com/",
+    "license": "Apache-2.0",
     "authors": [
         {
             "name": "Craig Campbell",
