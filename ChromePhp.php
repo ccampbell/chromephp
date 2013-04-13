@@ -26,12 +26,12 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '3.0.1';
+    const VERSION = '4.0.0';
 
     /**
      * @var string
      */
-    const HEADER_NAME = 'X-ChromePhp-Data';
+    const HEADER_NAME = 'X-ChromeLogger-Data';
 
     /**
      * @var string
@@ -88,7 +88,7 @@ class ChromePhp
      */
     protected $_json = array(
         'version' => self::VERSION,
-        'columns' => array('label', 'log', 'backtrace', 'type'),
+        'columns' => array('log', 'backtrace', 'type'),
         'rows' => array()
     );
 
@@ -147,46 +147,34 @@ class ChromePhp
     /**
      * logs a variable to the console
      *
-     * @param string label
-     * @param mixed value
-     * @param string severity ChromePhp::LOG || ChromePhp::WARN || ChromePhp::ERROR
+     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
      * @return void
      */
     public static function log()
     {
-        $args = func_get_args();
-        $severity = count($args) == 3 ? array_pop($args) : '';
-
-        // save precious bytes
-        if ($severity == self::LOG) {
-            $severity = '';
-        }
-
-        return self::_log($args + array('type' => $severity));
+        return self::_log('', func_get_args());
     }
 
     /**
      * logs a warning to the console
      *
-     * @param string label
-     * @param mixed value
+     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
      * @return void
      */
     public static function warn()
     {
-        return self::_log(func_get_args() + array('type' => self::WARN));
+        return self::_log(self::WARN, func_get_args());
     }
 
     /**
      * logs an error to the console
      *
-     * @param string label
-     * @param mixed value
+     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
      * @return void
      */
     public static function error()
     {
-        return self::_log(func_get_args() + array('type' => self::ERROR));
+        return self::_log(self::ERROR, func_get_args());
     }
 
     /**
@@ -196,17 +184,18 @@ class ChromePhp
      */
     public static function group()
     {
-        return self::_log(func_get_args() + array('type' => self::GROUP));
+        return self::_log(self::GROUP, func_get_args());
     }
 
     /**
      * sends an info log
      *
-     * @param string value
+     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
+     * @return void
      */
     public static function info()
     {
-        return self::_log(func_get_args() + array('type' => self::INFO));
+        return self::_log(self::INFO, func_get_args());
     }
 
     /**
@@ -216,7 +205,7 @@ class ChromePhp
      */
     public static function groupCollapsed()
     {
-        return self::_log(func_get_args() + array('type' => self::GROUP_COLLAPSED));
+        return self::_log(self::GROUP_COLLAPSED, func_get_args());
     }
 
     /**
@@ -226,7 +215,7 @@ class ChromePhp
      */
     public static function groupEnd()
     {
-        return self::_log(func_get_args() + array('type' => self::GROUP_END));
+        return self::_log(self::GROUP_END, func_get_args());
     }
 
     /**
@@ -235,30 +224,21 @@ class ChromePhp
      * @param string $type
      * @return void
      */
-    protected static function _log(array $args)
+    protected static function _log($type, array $args)
     {
-        $type = $args['type'];
-        unset($args['type']);
-
         // nothing passed in, don't do anything
         if (count($args) == 0 && $type != self::GROUP_END) {
             return;
         }
 
-        // default to single
-        $label = null;
-        $value = isset($args[0]) ? $args[0] : '';
-
         $logger = self::getInstance();
 
-        // if there are two values passed in then the first one is the label
-        if (count($args) == 2) {
-            $label = $args[0];
-            $value = $args[1];
-        }
-
         $logger->_processed = array();
-        $value = $logger->_convert($value);
+
+        $logs = array();
+        foreach ($args as $arg) {
+            $logs[] = $logger->_convert($arg);
+        }
 
         $backtrace = debug_backtrace(false);
         $level = $logger->getSetting(self::BACKTRACE_LEVEL);
@@ -268,7 +248,7 @@ class ChromePhp
             $backtrace_message = $backtrace[$level]['file'] . ' : ' . $backtrace[$level]['line'];
         }
 
-        $logger->_addRow($label, $value, $backtrace_message, $type);
+        $logger->_addRow($logs, $backtrace_message, $type);
     }
 
     /**
@@ -363,10 +343,16 @@ class ChromePhp
      * @var mixed
      * @return void
      */
-    protected function _addRow($label, $log, $backtrace, $type)
+    protected function _addRow(array $logs, $backtrace, $type)
     {
         // if this is logged on the same line for example in a loop, set it to null to save space
         if (in_array($backtrace, $this->_backtraces)) {
+            $backtrace = null;
+        }
+
+        // for group, groupEnd, and groupCollapsed
+        // take out the backtrace since it is not useful
+        if ($type == self::GROUP || $type == self::GROUP_END || $type == self::GROUP_COLLAPSED) {
             $backtrace = null;
         }
 
@@ -374,7 +360,7 @@ class ChromePhp
             $this->_backtraces[] = $backtrace;
         }
 
-        $row = array($label, $log, $backtrace, $type);
+        $row = array($logs, $backtrace, $type);
 
         $this->_json['rows'][] = $row;
         $this->_writeHeader($this->_json);
