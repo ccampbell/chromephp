@@ -152,7 +152,8 @@ class ChromePhp
      */
     public static function log()
     {
-        return self::_log('', func_get_args());
+        $args = func_get_args();
+        return self::_log('', $args);
     }
 
     /**
@@ -163,7 +164,8 @@ class ChromePhp
      */
     public static function warn()
     {
-        return self::_log(self::WARN, func_get_args());
+        $args = func_get_args();
+        return self::_log(self::WARN, $args);
     }
 
     /**
@@ -174,7 +176,8 @@ class ChromePhp
      */
     public static function error()
     {
-        return self::_log(self::ERROR, func_get_args());
+        $args = func_get_args();
+        return self::_log(self::ERROR, $args);
     }
 
     /**
@@ -184,7 +187,8 @@ class ChromePhp
      */
     public static function group()
     {
-        return self::_log(self::GROUP, func_get_args());
+        $args = func_get_args();
+        return self::_log(self::GROUP, $args);
     }
 
     /**
@@ -195,7 +199,8 @@ class ChromePhp
      */
     public static function info()
     {
-        return self::_log(self::INFO, func_get_args());
+        $args = func_get_args();
+        return self::_log(self::INFO, $args);
     }
 
     /**
@@ -205,7 +210,8 @@ class ChromePhp
      */
     public static function groupCollapsed()
     {
-        return self::_log(self::GROUP_COLLAPSED, func_get_args());
+        $args = func_get_args();
+        return self::_log(self::GROUP_COLLAPSED, $args);
     }
 
     /**
@@ -215,7 +221,8 @@ class ChromePhp
      */
     public static function groupEnd()
     {
-        return self::_log(self::GROUP_END, func_get_args());
+        $args = func_get_args();
+        return self::_log(self::GROUP_END, $args);
     }
 
     /**
