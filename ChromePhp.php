@@ -26,7 +26,7 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '4.0.0';
+    const VERSION = '4.1.0';
 
     /**
      * @var string
@@ -72,6 +72,11 @@ class ChromePhp
      * @var string
      */
     const GROUP_COLLAPSED = 'groupCollapsed';
+
+    /**
+     * @var string
+     */
+    const TABLE = 'table';
 
     /**
      * @var string
@@ -223,6 +228,17 @@ class ChromePhp
     {
         $args = func_get_args();
         return self::_log(self::GROUP_END, $args);
+    }
+
+    /**
+     * sends a table log
+     *
+     * @param string value
+     */
+    public static function table()
+    {
+        $args = func_get_args();
+        return self::_log(self::TABLE, $args);
     }
 
     /**
