@@ -42,7 +42,12 @@ class ChromePhp
      * @var string
      */
     const LOG = 'log';
-
+    
+    /**
+     * @var string
+     */
+    const DEBUG = 'debug';
+    
     /**
      * @var string
      */
@@ -159,6 +164,18 @@ class ChromePhp
     {
         $args = func_get_args();
         return self::_log('', $args);
+    }
+    
+    /**
+     * logs a debug message to the console
+     *
+     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
+     * @return void
+     */
+    public static function debug()
+    {
+        $args = func_get_args();
+        return self::_log(self::DEBUG, $args);
     }
 
     /**
