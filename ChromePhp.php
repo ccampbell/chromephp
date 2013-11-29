@@ -77,7 +77,12 @@ class ChromePhp
      * @var string
      */
     const TABLE = 'table';
-
+    
+    /**
+     * @var int
+     */
+    const MAX_DATA = 200000;
+    
     /**
      * @var string
      */
@@ -391,7 +396,14 @@ class ChromePhp
 
     protected function _writeHeader($data)
     {
-        header(self::HEADER_NAME . ': ' . $this->_encode($data));
+        $encodedData = $this->_encode($data);
+        
+        if(strlen($encodedData) <= self::MAX_DATA){
+            header(self::HEADER_NAME . ': ' . $encodedData);
+        }else{
+            $this->_json['rows'] = array();
+            self::warn('Data is too big!');
+        }
     }
 
     /**
