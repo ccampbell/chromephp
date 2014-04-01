@@ -41,42 +41,42 @@ class ChromePhp
     /**
      * @var string
      */
-    const LOG = 'log';
+    const LOG_TYPE_LOG = 'log';
 
     /**
      * @var string
      */
-    const WARN = 'warn';
+    const LOG_TYPE_WARN = 'warn';
 
     /**
      * @var string
      */
-    const ERROR = 'error';
+    const LOG_TYPE_ERROR = 'error';
 
     /**
      * @var string
      */
-    const GROUP = 'group';
+    const LOG_TYPE_GROUP = 'group';
 
     /**
      * @var string
      */
-    const INFO = 'info';
+    const LOG_TYPE_INFO = 'info';
 
     /**
      * @var string
      */
-    const GROUP_END = 'groupEnd';
+    const LOG_TYPE_GROUP_END = 'groupEnd';
 
     /**
      * @var string
      */
-    const GROUP_COLLAPSED = 'groupCollapsed';
+    const LOG_TYPE_GROUP_COLLAPSED = 'groupCollapsed';
 
     /**
      * @var string
      */
-    const TABLE = 'table';
+    const LOG_TYPE_TABLE = 'table';
 
     /**
      * @var string
@@ -150,111 +150,52 @@ class ChromePhp
     }
 
     /**
-     * logs a variable to the console
+     * Invoked when calling a static method that does not exist.
      *
-     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
-     * @return void
+     * @param  string $name The name of the called method.
+     * @param  array  $args The aguments passed.
+     * @return ChromePhp    The instance of ChromePhp (for method chaining)
      */
-    public static function log()
+    public static function __callStatic($name, $args)
     {
-        $args = func_get_args();
-        return self::_log('', $args);
+        $const = 'self::LOG_TYPE_' . self::_fromCamelCase($name);
+
+        if (defined($const))
+        {
+            return self::_log(constant($const), $args);
+        }
+        else
+        {
+            return self::getInstance();
+        }
     }
 
     /**
-     * logs a warning to the console
+     * Invoked when calling a method that does not exist.
      *
-     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
-     * @return void
+     * @param  string $name The name of the called method.
+     * @param  array  $args The aguments passed.
+     * @return ChromePhp    The instance of ChromePhp (for method chaining)
      */
-    public static function warn()
+    public function __call($name, $args)
     {
-        $args = func_get_args();
-        return self::_log(self::WARN, $args);
-    }
-
-    /**
-     * logs an error to the console
-     *
-     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
-     * @return void
-     */
-    public static function error()
-    {
-        $args = func_get_args();
-        return self::_log(self::ERROR, $args);
-    }
-
-    /**
-     * sends a group log
-     *
-     * @param string value
-     */
-    public static function group()
-    {
-        $args = func_get_args();
-        return self::_log(self::GROUP, $args);
-    }
-
-    /**
-     * sends an info log
-     *
-     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
-     * @return void
-     */
-    public static function info()
-    {
-        $args = func_get_args();
-        return self::_log(self::INFO, $args);
-    }
-
-    /**
-     * sends a collapsed group log
-     *
-     * @param string value
-     */
-    public static function groupCollapsed()
-    {
-        $args = func_get_args();
-        return self::_log(self::GROUP_COLLAPSED, $args);
-    }
-
-    /**
-     * ends a group log
-     *
-     * @param string value
-     */
-    public static function groupEnd()
-    {
-        $args = func_get_args();
-        return self::_log(self::GROUP_END, $args);
-    }
-
-    /**
-     * sends a table log
-     *
-     * @param string value
-     */
-    public static function table()
-    {
-        $args = func_get_args();
-        return self::_log(self::TABLE, $args);
+        return forward_static_call_array(array(self, $name), $args);
     }
 
     /**
      * internal logging call
      *
      * @param string $type
-     * @return void
+     * @return ChromePhp
      */
     protected static function _log($type, array $args)
     {
+        $logger = self::getInstance();
+
         // nothing passed in, don't do anything
         if (count($args) == 0 && $type != self::GROUP_END) {
-            return;
+            return $logger;
         }
-
-        $logger = self::getInstance();
 
         $logger->_processed = array();
 
@@ -272,6 +213,8 @@ class ChromePhp
         }
 
         $logger->_addRow($logs, $backtrace_message, $type);
+
+        return $logger;
     }
 
     /**
@@ -403,6 +346,18 @@ class ChromePhp
     protected function _encode($data)
     {
         return base64_encode(utf8_encode(json_encode($data)));
+    }
+
+    /**
+     * Converts a string from CamelCase to uppercase underscore
+     * Based on: http://stackoverflow.com/questions/1993721/how-to-convert-camelcase-to-camel-case#1993772
+     *
+     * @param  string $input A string in CamelCase
+     * @return string
+     */
+    function _fromCamelCase($input) {
+        preg_match_all('!([A-Z][A-Z0-9]*(?=$|[A-Z][a-z0-9])|[A-Za-z][a-z0-9]+)!', $input, $matches);
+        return implode('_', array_map('strtoupper', $matches[0]));
     }
 
     /**
