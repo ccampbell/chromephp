@@ -273,7 +273,7 @@ class ChromePhp
 
         $logger->_addRow($logs, $backtrace_message, $type);
 
-        return self::getInstance();
+        return $logger;
     }
 
     /**
