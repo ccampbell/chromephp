@@ -193,7 +193,7 @@ class ChromePhp
         $logger = self::getInstance();
 
         // nothing passed in, don't do anything
-        if (count($args) == 0 && $type != self::GROUP_END) {
+        if (count($args) == 0 && $type != self::LOG_TYPE_GROUP_END) {
             return $logger;
         }
 
@@ -318,7 +318,7 @@ class ChromePhp
 
         // for group, groupEnd, and groupCollapsed
         // take out the backtrace since it is not useful
-        if ($type == self::GROUP || $type == self::GROUP_END || $type == self::GROUP_COLLAPSED) {
+        if (in_array($type, array(self::LOG_TYPE_GROUP, self::LOG_TYPE_GROUP_END, self::LOG_TYPE_GROUP_COLLAPSED))) {
             $backtrace = null;
         }
 
