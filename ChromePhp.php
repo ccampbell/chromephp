@@ -245,29 +245,25 @@ class ChromePhp
      * internal logging call
      *
      * @param string $type
-     * @return void
+     * @return ChromePhp
      */
     protected static function _log($type, array $args)
     {
-        // nothing passed in, don't do anything
-        if (count($args) == 0 && $type != self::GROUP_END) {
-            return;
-        }
-
         $logger = self::getInstance();
 
-        $logger->_processed = array();
-
-        $logs = array();
-        foreach ($args as $arg) {
-            $logs[] = $logger->_convert($arg);
+        // nothing passed in, don't do anything
+        if (empty($args) && $type != self::GROUP_END) {
+            return $logger;
         }
+
+        $logger->_processed = array();
+        $logs = array_map(array($logger, '_convert'), $args);
 
         $backtrace = debug_backtrace(false);
         $level = $logger->getSetting(self::BACKTRACE_LEVEL);
 
         $backtrace_message = 'unknown';
-        if (isset($backtrace[$level]['file']) && isset($backtrace[$level]['line'])) {
+        if (isset($backtrace[$level]['file'], $backtrace[$level]['line'])) {
             $backtrace_message = $backtrace[$level]['file'] . ' : ' . $backtrace[$level]['line'];
         }
 
