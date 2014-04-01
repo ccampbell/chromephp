@@ -41,6 +41,11 @@ class ChromePhp
     /**
      * @var string
      */
+    const BASE_PATH = 'base_path';
+
+    /**
+     * @var string
+     */
     const LOG = 'log';
 
     /**
@@ -265,10 +270,17 @@ class ChromePhp
 
         $backtrace = debug_backtrace(false);
         $level = $logger->getSetting(self::BACKTRACE_LEVEL);
+        $basepath = $logger->getSetting(self::BASE_PATH);
 
         $backtrace_message = 'unknown';
         if (isset($backtrace[$level]['file']) && isset($backtrace[$level]['line'])) {
-            $backtrace_message = $backtrace[$level]['file'] . ' : ' . $backtrace[$level]['line'];
+            $file = $backtrace[$level]['file'];
+
+            if ($basepath && strpos($file, $basepath) === 0) {
+                $file = substr($file, strlen($basepath));
+            }
+
+            $backtrace_message = $file . ' : ' . $backtrace[$level]['line'];
         }
 
         $logger->_addRow($logs, $backtrace_message, $type);
