@@ -192,23 +192,19 @@ class ChromePhp
         $logger = self::getInstance();
 
         // nothing passed in, don't do anything
-        if (count($args) == 0 && $type != self::LOG_TYPE_GROUP_END) {
+        if (empty($args) && $type != self::LOG_TYPE_GROUP_END) {
             return $logger;
         }
 
         $logger->_processed = array();
-
-        $logs = array();
-        foreach ($args as $arg) {
-            $logs[] = $logger->_convert($arg);
-        }
+        $logs = array_map(array($logger, '_convert'), $args);
 
         $backtrace = debug_backtrace(false);
         $level = $logger->getSetting(self::BACKTRACE_LEVEL);
         $basepath = $logger->getSetting(self::BASE_PATH);
 
         $backtrace_message = 'unknown';
-        if (isset($backtrace[$level]['file']) && isset($backtrace[$level]['line'])) {
+        if (isset($backtrace[$level]['file'], $backtrace[$level]['line'])) {
             $file = $backtrace[$level]['file'];
 
             if ($basepath && strpos($file, $basepath) === 0) {
