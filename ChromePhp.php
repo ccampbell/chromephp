@@ -41,52 +41,47 @@ class ChromePhp
     /**
      * @var string
      */
-    const LOG = 'log';
+    const BASE_PATH = 'base_path';
 
     /**
      * @var string
      */
-    const WARN = 'warn';
+    const LOG_TYPE_LOG = 'log';
 
     /**
      * @var string
      */
-    const ERROR = 'error';
+    const LOG_TYPE_WARN = 'warn';
 
     /**
      * @var string
      */
-    const GROUP = 'group';
+    const LOG_TYPE_ERROR = 'error';
 
     /**
      * @var string
      */
-    const INFO = 'info';
+    const LOG_TYPE_GROUP = 'group';
 
     /**
      * @var string
      */
-    const GROUP_END = 'groupEnd';
+    const LOG_TYPE_INFO = 'info';
 
     /**
      * @var string
      */
-    const GROUP_COLLAPSED = 'groupCollapsed';
+    const LOG_TYPE_GROUP_END = 'groupEnd';
 
     /**
      * @var string
      */
-    const TABLE = 'table';
+    const LOG_TYPE_GROUP_COLLAPSED = 'groupCollapsed';
 
     /**
      * @var string
      */
-    protected $_php_version;
-
-    /**
-     * @var int
-     */
-    protected $_timestamp;
+    const LOG_TYPE_TABLE = 'table';
 
     /**
      * @var array
@@ -111,7 +106,18 @@ class ChromePhp
      * @var array
      */
     protected $_settings = array(
-        self::BACKTRACE_LEVEL => 1
+        self::BACKTRACE_LEVEL => 1,
+        self::BASE_PATH       => ''
+    );
+
+    /**
+     * Never print a backtrace for these log types
+     * @var array
+     */
+    protected $_no_backtrace = array(
+        self::LOG_TYPE_GROUP,
+        self::LOG_TYPE_GROUP_END,
+        self::LOG_TYPE_GROUP_COLLAPSED
     );
 
     /**
@@ -131,8 +137,6 @@ class ChromePhp
      */
     private function __construct()
     {
-        $this->_php_version = phpversion();
-        $this->_timestamp = $this->_php_version >= 5.1 ? $_SERVER['REQUEST_TIME'] : time();
         $this->_json['request_uri'] = $_SERVER['REQUEST_URI'];
     }
 
@@ -150,128 +154,83 @@ class ChromePhp
     }
 
     /**
-     * logs a variable to the console
+     * Invoked when calling a static method that does not exist.
      *
-     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
-     * @return void
+     * @param  string $name The name of the called method.
+     * @param  array  $args The aguments passed.
+     * @return ChromePhp    The instance of ChromePhp (for method chaining)
      */
-    public static function log()
+    public static function __callStatic($name, $args)
     {
-        $args = func_get_args();
-        return self::_log('', $args);
+        $const = 'self::LOG_TYPE_' . self::_fromCamelCase($name);
+
+        if (defined($const))
+        {
+            return self::_log(constant($const), $args);
+        }
+        else
+        {
+            return self::getInstance();
+        }
     }
 
     /**
-     * logs a warning to the console
+     * Invoked when calling a method that does not exist.
      *
-     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
-     * @return void
+     * @param  string $name The name of the called method.
+     * @param  array  $args The aguments passed.
+     * @return ChromePhp    The instance of ChromePhp (for method chaining)
      */
-    public static function warn()
+    public function __call($name, $args)
     {
-        $args = func_get_args();
-        return self::_log(self::WARN, $args);
-    }
+        $const = 'self::LOG_TYPE_' . self::_fromCamelCase($name);
 
-    /**
-     * logs an error to the console
-     *
-     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
-     * @return void
-     */
-    public static function error()
-    {
-        $args = func_get_args();
-        return self::_log(self::ERROR, $args);
-    }
-
-    /**
-     * sends a group log
-     *
-     * @param string value
-     */
-    public static function group()
-    {
-        $args = func_get_args();
-        return self::_log(self::GROUP, $args);
-    }
-
-    /**
-     * sends an info log
-     *
-     * @param mixed $data,... unlimited OPTIONAL number of additional logs [...]
-     * @return void
-     */
-    public static function info()
-    {
-        $args = func_get_args();
-        return self::_log(self::INFO, $args);
-    }
-
-    /**
-     * sends a collapsed group log
-     *
-     * @param string value
-     */
-    public static function groupCollapsed()
-    {
-        $args = func_get_args();
-        return self::_log(self::GROUP_COLLAPSED, $args);
-    }
-
-    /**
-     * ends a group log
-     *
-     * @param string value
-     */
-    public static function groupEnd()
-    {
-        $args = func_get_args();
-        return self::_log(self::GROUP_END, $args);
-    }
-
-    /**
-     * sends a table log
-     *
-     * @param string value
-     */
-    public static function table()
-    {
-        $args = func_get_args();
-        return self::_log(self::TABLE, $args);
+        if (defined($const))
+        {
+            return self::_log(constant($const), $args);
+        }
+        else
+        {
+            return self::getInstance();
+        }
     }
 
     /**
      * internal logging call
      *
      * @param string $type
-     * @return void
+     * @return ChromePhp
      */
     protected static function _log($type, array $args)
     {
-        // nothing passed in, don't do anything
-        if (count($args) == 0 && $type != self::GROUP_END) {
-            return;
-        }
-
         $logger = self::getInstance();
 
-        $logger->_processed = array();
-
-        $logs = array();
-        foreach ($args as $arg) {
-            $logs[] = $logger->_convert($arg);
+        // nothing passed in, don't do anything
+        if (empty($args) && $type != self::LOG_TYPE_GROUP_END) {
+            return $logger;
         }
+
+        $logger->_processed = array();
+        $logs = array_map(array($logger, '_convert'), $args);
 
         $backtrace = debug_backtrace(false);
         $level = $logger->getSetting(self::BACKTRACE_LEVEL);
+        $basepath = $logger->getSetting(self::BASE_PATH);
 
         $backtrace_message = 'unknown';
-        if (isset($backtrace[$level]['file']) && isset($backtrace[$level]['line'])) {
-            $backtrace_message = $backtrace[$level]['file'] . ' : ' . $backtrace[$level]['line'];
+        if (isset($backtrace[$level]['file'], $backtrace[$level]['line'])) {
+            $file = $backtrace[$level]['file'];
+
+            if ($basepath && strpos($file, $basepath) === 0) {
+                $file = substr($file, strlen($basepath));
+            }
+
+            $backtrace_message = $file . ' : ' . $backtrace[$level]['line'];
         }
 
         $logger->_addRow($logs, $backtrace_message, $type);
+
+        return $logger;
     }
 
     /**
@@ -318,7 +277,7 @@ class ChromePhp
             }
             $type = $this->_getPropertyKey($property);
 
-            if ($this->_php_version >= 5.3) {
+            if (version_compare(PHP_VERSION, '5.3') >= 0) {
                 $property->setAccessible(true);
             }
 
@@ -375,7 +334,7 @@ class ChromePhp
 
         // for group, groupEnd, and groupCollapsed
         // take out the backtrace since it is not useful
-        if ($type == self::GROUP || $type == self::GROUP_END || $type == self::GROUP_COLLAPSED) {
+        if (in_array($type, $this->_no_backtrace)) {
             $backtrace = null;
         }
 
@@ -383,9 +342,7 @@ class ChromePhp
             $this->_backtraces[] = $backtrace;
         }
 
-        $row = array($logs, $backtrace, $type);
-
-        $this->_json['rows'][] = $row;
+        $this->_json['rows'][] = array($logs, $backtrace, $type);
         $this->_writeHeader($this->_json);
     }
 
@@ -403,6 +360,18 @@ class ChromePhp
     protected function _encode($data)
     {
         return base64_encode(utf8_encode(json_encode($data)));
+    }
+
+    /**
+     * Converts a string from CamelCase to uppercase underscore
+     * Based on: http://stackoverflow.com/questions/1993721/how-to-convert-camelcase-to-camel-case#1993772
+     *
+     * @param  string $input A string in CamelCase
+     * @return string
+     */
+    function _fromCamelCase($input) {
+        preg_match_all('!([A-Z][A-Z0-9]*(?=$|[A-Z][a-z0-9])|[A-Za-z][a-z0-9]+)!', $input, $matches);
+        return implode('_', array_map('strtoupper', $matches[0]));
     }
 
     /**
@@ -438,9 +407,6 @@ class ChromePhp
      */
     public function getSetting($key)
     {
-        if (!isset($this->_settings[$key])) {
-            return null;
-        }
-        return $this->_settings[$key];
+        return isset($this->_settings[$key]) ? $this->_settings[$key] : null;
     }
 }
