@@ -21,19 +21,20 @@ This library allows you to log variables to the Chrome or Firefox devtools conso
 
 ## Installation Firefox
 1. Put ChromePhp.php somewhere in your PHP include path
-2. Initialize ChromePhp for FirePHP compatibility
+2. Enable Server logging filter in web console
+3. Initialize ChromePhp for FirePHP compatibility
 
     ```php
-      include 'ChromePhp.php';
-      $firephp = ChromePhp::getInstance(true);
-      $firephp->setEnabled(false, 'FirePHP');
+    include 'ChromePhp.php';
+    $firephp = ChromePhp::getInstance();
+    $firephp->setEnabled(true, 'FirePHP');
     ```
 
-3. Log some data
+4. Log some data
 
     ```php
-      $firephp->log($_GET, 'GET variables');
-      $firephp->warn('Value out of range');
+    $firephp->log($_GET, 'GET variables');
+    $firephp->warn('Value out of range');
     ```
 
 More information can be found here:
