@@ -1,7 +1,6 @@
 ## Overview
-ChromePhp is a PHP library for the Chrome Logger Google Chrome extension and Firefox Developer Tools console.
-
-This library allows you to log variables to the Chrome or Firefox devtools console.
+ChromePhp is a PHP library to log variables to the Chrome or Firefox devtools console.
+For Google Chrome the Chrome Logger extension is needed.
 
 ## Requirements
 - PHP 5 or later
@@ -21,13 +20,21 @@ This library allows you to log variables to the Chrome or Firefox devtools conso
 
 ## Installation Firefox
 1. Put ChromePhp.php somewhere in your PHP include path
-2. Enable Server logging filter in web console
+2. Enable Server logging filter in the web console
 3. Initialize ChromePhp for FirePHP compatibility
 
     ```php
     include 'ChromePhp.php';
     $firephp = ChromePhp::getInstance();
     $firephp->setEnabled(true, 'FirePHP');
+    ```
+    The second parameter 'FirePHP' is optional and can be omitted in subsequent calls to setEnabled. FirePHP compatibility mode can be changed by calling
+    ```php
+    // disable FirePHP mode
+    $firephp->addSetting('log_style', '');
+    
+    //enable FirePHP mode
+    $firephp->addSetting('log_style', 'FirePHP');
     ```
 
 4. Log some data
