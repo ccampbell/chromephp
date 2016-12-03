@@ -24,9 +24,9 @@ This library allows you to log variables to the Chrome or Firefox devtools conso
 2. Initialize ChromePhp for FirePHP compatibility
 
     ```php
-    include 'ChromePhp.php';
-    $firephp = ChromePhp::getInstance(true);
-    $firephp->setEnabled(false, 'FirePHP');
+      include 'ChromePhp.php';
+      $firephp = ChromePhp::getInstance(true);
+      $firephp->setEnabled(false, 'FirePHP');
     ```
 
 3. Log some data
@@ -37,5 +37,7 @@ This library allows you to log variables to the Chrome or Firefox devtools conso
     ```
 
 More information can be found here:
+
 http://www.chromelogger.com
+
 https://developer.mozilla.org/en-US/docs/Tools/Web_Console/Console_messages#Server
