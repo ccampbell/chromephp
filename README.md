@@ -28,7 +28,7 @@ For Google Chrome the Chrome Logger extension is needed.
     $firephp = ChromePhp::getInstance();
     $firephp->setEnabled(true, 'FirePHP');
     ```
-    The second parameter 'FirePHP' is optional and can be omitted in subsequent calls to setEnabled. FirePHP compatibility mode can be changed by calling
+The second parameter 'FirePHP' is optional and can be omitted in subsequent calls to setEnabled. FirePHP compatibility mode can be changed by calling
     ```php
     // disable FirePHP mode
     $firephp->addSetting('log_style', '');
