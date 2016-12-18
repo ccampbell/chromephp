@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright 2010-2013 Craig Campbell
+ * Copyright 2010-2013 Craig Campbell, 2016 Erik Krause
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,14 @@
  *
  * @package ChromePhp
  * @author Craig Campbell <iamcraigcampbell@gmail.com>
+ * @author Erik Krause <erik.krause@gmx.de>
  */
 class ChromePhp
 {
     /**
      * @var string (ek)
      */
-    const VERSION = '4.2.0';
+    const VERSION = '4.3.0';
 
     /**
      * @var string
@@ -440,7 +441,25 @@ class ChromePhp
 
     protected function _writeHeader($data)
     {
-        header(self::HEADER_NAME . ': ' . $this->_encode($data));
+        $encodedData = $this->_encode($data);
+        if ($encodedData)
+          header(self::HEADER_NAME . ': ' . $encodedData);
+    }
+
+
+
+    /**
+     * recursively converts data for json_encode (ek)
+     *
+     * @param mixed ref $dat
+     */
+
+    protected static function _filterArray(&$dat)
+    {
+        if (is_resource($dat))
+            $dat = print_r($dat, true).", ".get_resource_type($dat);
+        else
+            $dat = print_r($dat, true); // also fixes issue #35
     }
 
     /**
@@ -449,8 +468,12 @@ class ChromePhp
      * @param array $data
      * @return string
      */
+
     protected function _encode($data)
     {
+
+        array_walk_recursive($data, 'self::_filterArray'); //(ek)
+
         return base64_encode(utf8_encode(json_encode($data)));
     }
 
@@ -493,3 +516,4 @@ class ChromePhp
         return $this->_settings[$key];
     }
 }
+
