@@ -49,3 +49,24 @@ More information can be found here:
 http://www.chromelogger.com
 
 https://developer.mozilla.org/en-US/docs/Tools/Web_Console/Console_messages#Server
+
+## Use this repository with composer
+
+To use this repository, change your composer.json to add `ccampbell/chromephp`
+in require-dev and add this in your repository list. For example:
+
+```
+"require-dev": {
+    "ccampbell/chromephp" : "dev-master"
+},
+
+"repositories": [
+    {
+        "type" : "vcs",
+        "url"  : "git@github.com:ErikKrause/chromephp.git"
+    }
+]
+
+```
+
+
