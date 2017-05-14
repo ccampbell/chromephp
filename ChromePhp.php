@@ -79,6 +79,11 @@ class ChromePhp
     const TABLE = 'table';
 
     /**
+     * @var int
+     */
+    const HTTPD_HEADER_LIMIT = 8192; // 8Kb - Default for most HTTPD Servers
+
+    /**
      * @var string
      */
     protected $_php_version;
@@ -391,7 +396,25 @@ class ChromePhp
 
     protected function _writeHeader($data)
     {
-        header(self::HEADER_NAME . ': ' . $this->_encode($data));
+        $header = self::HEADER_NAME . ': ' . $this->_encode($data);
+        // Most HTTPD servers have a default header line length limit of 8kb, must test to avoid 500 Internal Server Error.
+        if (strlen($header) > self::HTTPD_HEADER_LIMIT) {
+            $data['rows'] = array();
+            $data['rows'][] = array(array('ChromePHP Error: The HTML header will surpass the limit of '.$this->_formatSize(self::HTTPD_HEADER_LIMIT).' ('.$this->_formatSize(strlen($header)).') - You can increase the HTTPD_HEADER_LIMIT on ChromePHP class, according to your Apache LimitRequestFieldsize directive'), '', self::ERROR);
+            $header = self::HEADER_NAME . ': ' . $this->_encode($data);
+        }
+        header($header);
+    }
+
+    protected function _formatSize($arg) {
+        if ($arg>0){
+            $j = 0;
+            $ext = array("bytes","Kb","Mb","Gb","Tb");
+            while ($arg >= pow(1024,$j)) ++$j; {
+                $arg = (round($arg/pow(1024,$j-1)*100)/100).($ext[$j-1]);
+            }
+            return $arg;
+        } else return "0Kb";
     }
 
     /**
