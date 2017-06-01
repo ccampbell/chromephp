@@ -458,8 +458,10 @@ class ChromePhp
     {
         if (is_resource($dat))
             $dat = print_r($dat, true).", ".get_resource_type($dat);
-        else
-            $dat = print_r($dat, true); // also fixes issue #35
+        elseif (is_numeric($dat) && !is_finite($dat))
+            $dat = print_r($dat, true) . ", numeric"; // fixes issue #35
+        elseif (!is_object($dat) && !is_null($dat) && !is_scalar($dat))
+            $dat = print_r($dat, true);
     }
 
     /**
