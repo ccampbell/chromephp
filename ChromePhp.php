@@ -420,7 +420,6 @@ class ChromePhp
 
 		while(mb_strlen($encdata) > self::HEADER_LIMIT)
 		{
-			$i++;
 			$shrinking = false;
 			// first remove regular status messages from tables from start to finish
 			// try to leave behind warnings, errors
