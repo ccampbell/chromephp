@@ -397,7 +397,7 @@ class ChromePhp
 
     protected function _writeHeader($data)
     {
-		$encdata = $this->_shrinkLog($data);
+        $encdata = $this->_shrinkLog($data);
         header(self::HEADER_NAME . ': ' . $encdata);
     }
 
@@ -426,7 +426,7 @@ class ChromePhp
 			// try to leave behind warnings, errors
 			foreach($data['rows'] as $j => $row)
 			{
-				if($row[2] === 'table')
+				if(isset($row[2]) && $row[2] === 'table')
 				{
 					foreach($row[0] as $k => $ro)
 					{
@@ -443,7 +443,7 @@ class ChromePhp
 			if(!$shrinking)
 			{
 				// remove regular logs
-				if($row[0][2] !== 'error')
+				if(isset($row[0][2]) && $row[0][2] !== 'error')
 				{
 					unset($data['rows']);
 					$shrinking = true;
