@@ -26,12 +26,18 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '4.1.0';
+    const VERSION = '4.1.1';
 
     /**
      * @var string
      */
     const HEADER_NAME = 'X-ChromeLogger-Data';
+
+    /**
+     * @var int
+	 * This should match Apache LimitRequestFieldSize Directive
+     */
+    const HEADER_LIMIT = 8000;
 
     /**
      * @var string
@@ -391,8 +397,67 @@ class ChromePhp
 
     protected function _writeHeader($data)
     {
-        header(self::HEADER_NAME . ': ' . $this->_encode($data));
+		$encdata = $this->_shrinkLog($data);
+        header(self::HEADER_NAME . ': ' . $encdata);
     }
+
+	/**
+	* checks if headers will be too large. If so, it
+	* will remove notices first, then other types until
+	* the header will be small enough.
+	* @author Frank Forte <frank.forte@gmail.com>
+	* @var array
+	* @return string
+	*/
+	protected function _shrinkLog($data)
+    {
+		$encdata = $this->_encode($data);
+
+		if(mb_strlen($encdata) > self::HEADER_LIMIT)
+		{
+			array_unshift($data['rows'],[['!! WARNING !!! Headers too large, log truncated to prevent Apache 500 Server Error.', 'ChromePHP : '.__LINE__, self::ERROR]]);
+		}
+
+		while(mb_strlen($encdata) > self::HEADER_LIMIT)
+		{
+			$i++;
+			$shrinking = false;
+			// first remove regular status messages from tables from start to finish
+			// try to leave behind warnings, errors
+			foreach($data['rows'] as $j => $row)
+			{
+				if($row[2] === 'table')
+				{
+					foreach($row[0] as $k => $ro)
+					{
+						if($data['rows'][$j][0][$k][sizeof($data['rows'][$j][0][$k]) -1][1] == 'status')
+						{
+							array_pop($data['rows'][$j][0][$k]);
+								$shrinking = true;
+								break;
+						}
+					}
+				}
+			}
+			// no status messages to remove from the table log?
+			if(!$shrinking)
+			{
+				// remove regular logs
+				if($row[0][2] !== 'error')
+				{
+					unset($data['rows']);
+					$shrinking = true;
+				}
+				// ok, if nothing else, remove debug messages from start to finish
+				else
+				{
+					array_pop($data['rows']);
+				}
+			}
+			$encdata = $this->_encode($data);
+		}
+		return $encdata;
+	}
 
     /**
      * encodes the data to be sent along with the request
