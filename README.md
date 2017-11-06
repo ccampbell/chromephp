@@ -20,7 +20,7 @@ For Google Chrome the Chrome Logger extension is needed.
 
 ## Installation Firefox
 1. Put ChromePhp.php somewhere in your PHP include path
-2. Enable Server logging filter in the web console. - ChromePhp works out of the box with the native Firefox dev tools. No need to install an extra add-on. 
+2. Enable Server logging filter in the web console. If Server logging filter is not present (likely from FF 57 on), disable devtools.webconsole.new-frontend-enabled in about:config 
 3. Initialize ChromePhp for FirePHP compatibility
 
     ```php
