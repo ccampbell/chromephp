@@ -26,7 +26,7 @@ class ChromePhp
     /**
      * @var string
      */
-    const VERSION = '4.1.0';
+    const VERSION = '4.1.1';
 
     /**
      * @var string
@@ -158,7 +158,7 @@ class ChromePhp
     public static function log()
     {
         $args = func_get_args();
-        return self::_log('', $args);
+        return self::_log(self::LOG, $args); // fixes problem with Chrome Logger extension in Firefox 57+
     }
 
     /**
