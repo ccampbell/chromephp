@@ -1,15 +1,21 @@
 {
-    "name": "ccampbell/chromephp",
+    "name": "frankforte/chromephp",
     "type": "library",
     "description": "Log variables to the Chrome console (via Chrome Logger Google Chrome extension).",
     "keywords": ["log","logging"],
-    "homepage": "http://github.com/ccampbell/chromephp",
+    "homepage": "http://github.com/frankforte/chromephp",
     "license": "Apache-2.0",
     "authors": [
         {
             "name": "Craig Campbell",
             "email": "iamcraigcampbell@gmail.com",
             "homepage": "http://craig.is",
+            "role": "Developer"
+        },
+		{
+            "name": "Frank Forte",
+            "email": "frank.forte@gmail.com",
+            "homepage": "http://www.frankforte.ca",
             "role": "Developer"
         }
     ],
