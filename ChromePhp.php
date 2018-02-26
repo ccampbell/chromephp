@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright 2010-2013 Craig Campbell
+ * Copyright 2010-2013 Craig Campbell, 2016 Erik Krause
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,14 @@
  *
  * @package ChromePhp
  * @author Craig Campbell <iamcraigcampbell@gmail.com>
+ * @author Erik Krause <erik.krause@gmx.de>
  */
 class ChromePhp
 {
     /**
-     * @var string
+     * @var string (ek)
      */
-    const VERSION = '4.1.0';
+    const VERSION = '4.3.0';
 
     /**
      * @var string
@@ -37,6 +38,11 @@ class ChromePhp
      * @var string
      */
     const BACKTRACE_LEVEL = 'backtrace_level';
+
+    /**
+     * @var string (ek)
+     */
+    const LOG_STYLE = 'log_style';
 
     /**
      * @var string
@@ -127,6 +133,13 @@ class ChromePhp
     protected $_processed = array();
 
     /**
+     * provide enabled / disabled state
+     *
+     * @var bool
+     */
+    protected $_enabled = true;
+
+    /**
      * constructor
      */
     private function __construct()
@@ -135,6 +148,31 @@ class ChromePhp
         $this->_timestamp = $this->_php_version >= 5.1 ? $_SERVER['REQUEST_TIME'] : time();
         $this->_json['request_uri'] = $_SERVER['REQUEST_URI'];
     }
+
+    /**
+     * Enable and disable logging (ek)
+     *
+     * @param boolean $Enabled TRUE to enable, FALSE to disable
+     * @param string  $style 'FirePHP' to switch to FirePHP behaviour
+     * @return void
+     */
+    public function setEnabled($Enabled, $style = '')
+    {
+       $this->_enabled = $Enabled;
+       if ($style)
+         $this->addSetting(self::LOG_STYLE, $style);
+    }
+
+    /**
+     * Check if logging is enabled
+     *
+     * @return boolean TRUE if enabled
+     */
+    public function getEnabled()
+    {
+        return $this->_enabled;
+    }
+
 
     /**
      * gets instance of this class
@@ -254,9 +292,21 @@ class ChromePhp
             return;
         }
 
+
         $logger = self::getInstance();
 
+        // not enabled, don't do anything (ek)
+        if (!($logger->_enabled))
+            return;
+
         $logger->_processed = array();
+
+        // FirePHP passes the object name second but displays it first (ek)
+        if (($logger->getSetting(self::LOG_STYLE) == 'FirePHP') && (count($args) == 2)) {
+            $args = array_reverse($args);
+            $args[0] .= ":";
+        }
+
 
         $logs = array();
         foreach ($args as $arg) {
@@ -391,7 +441,27 @@ class ChromePhp
 
     protected function _writeHeader($data)
     {
-        header(self::HEADER_NAME . ': ' . $this->_encode($data));
+        $encodedData = $this->_encode($data);
+        if ($encodedData)
+          header(self::HEADER_NAME . ': ' . $encodedData);
+    }
+
+
+
+    /**
+     * recursively converts data for json_encode (ek)
+     *
+     * @param mixed ref $dat
+     */
+
+    protected static function _filterArray(&$dat)
+    {
+        if (is_resource($dat))
+            $dat = print_r($dat, true).", ".get_resource_type($dat);
+        elseif (is_numeric($dat) && !is_finite($dat))
+            $dat = print_r($dat, true) . ", numeric"; // fixes issue #35
+        elseif (!is_object($dat) && !is_null($dat) && !is_scalar($dat))
+            $dat = print_r($dat, true);
     }
 
     /**
@@ -400,8 +470,12 @@ class ChromePhp
      * @param array $data
      * @return string
      */
+
     protected function _encode($data)
     {
+
+        array_walk_recursive($data, 'self::_filterArray'); //(ek)
+
         return base64_encode(utf8_encode(json_encode($data)));
     }
 
@@ -444,3 +518,4 @@ class ChromePhp
         return $this->_settings[$key];
     }
 }
+
