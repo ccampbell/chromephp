@@ -186,6 +186,29 @@ class ChromePhp
     }
 
     /**
+     * logs an exception to the console
+     *
+     * @param Exception|Error $ex
+     * @return void
+     */
+    public static function exception($ex)
+    {
+        if (!($ex instanceof Exception) && !($ex instanceof Error)) {
+            return self::error($ex);
+        }
+
+        $type = self::ERROR;
+        $logger = self::getInstance();
+        $logger->_processed = array();
+
+        $logs = array();
+        $logs[] = $ex->getMessage();
+        $backtrace_message = $ex->getFile() . ' : ' . $ex->getLine();
+
+        $logger->_addRow($logs, $backtrace_message, $type);
+    }
+
+    /**
      * sends a group log
      *
      * @param string value
