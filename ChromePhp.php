@@ -79,11 +79,6 @@ class ChromePhp
     const TABLE = 'table';
 
     /**
-     * @var string
-     */
-    protected $_php_version;
-
-    /**
      * @var int
      */
     protected $_timestamp;
@@ -131,8 +126,7 @@ class ChromePhp
      */
     private function __construct()
     {
-        $this->_php_version = phpversion();
-        $this->_timestamp = $this->_php_version >= 5.1 ? $_SERVER['REQUEST_TIME'] : time();
+        $this->_timestamp = version_compare(PHP_VERSION, '5.1') >= 0 ? $_SERVER['REQUEST_TIME'] : time();
         $this->_json['request_uri'] = $_SERVER['REQUEST_URI'];
     }
 
@@ -318,7 +312,7 @@ class ChromePhp
             }
             $type = $this->_getPropertyKey($property);
 
-            if ($this->_php_version >= 5.3) {
+            if (version_compare(PHP_VERSION, '5.3') >= 0) {
                 $property->setAccessible(true);
             }
 
