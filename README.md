@@ -6,6 +6,10 @@ This library allows you to log variables to the Chrome console.
 ## Requirements
 - PHP 5 or later
 
+## License
+This library is licensed under the Apache 2.0 license: 
+http://www.apache.org/licenses/LICENSE-2.0
+
 ## Installation
 1. Install the Chrome extension from: https://chrome.google.com/extensions/detail/noaneddfkdjfnfdakjjmocngnfkfehhd
 2. Click the extension icon in the browser to enable it for the current tab's domain
