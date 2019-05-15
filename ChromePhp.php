@@ -79,11 +79,6 @@ class ChromePhp
     const TABLE = 'table';
 
     /**
-     * @var string
-     */
-    protected $_php_version;
-
-    /**
      * @var int
      */
     protected $_timestamp;
@@ -131,8 +126,7 @@ class ChromePhp
      */
     private function __construct()
     {
-        $this->_php_version = phpversion();
-        $this->_timestamp = $this->_php_version >= 5.1 ? $_SERVER['REQUEST_TIME'] : time();
+        $this->_timestamp = $_SERVER['REQUEST_TIME'];
         $this->_json['request_uri'] = $_SERVER['REQUEST_URI'];
     }
 
@@ -317,16 +311,8 @@ class ChromePhp
                 continue;
             }
             $type = $this->_getPropertyKey($property);
-
-            if ($this->_php_version >= 5.3) {
-                $property->setAccessible(true);
-            }
-
-            try {
-                $value = $property->getValue($object);
-            } catch (ReflectionException $e) {
-                $value = 'only PHP 5.3 can access private/protected properties';
-            }
+            $property->setAccessible(true);
+            $value = $property->getValue($object);
 
             // same instance as parent object
             if ($value === $object || in_array($value, $this->_processed, true)) {
