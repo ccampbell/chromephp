@@ -126,7 +126,7 @@ class ChromePhp
      */
     private function __construct()
     {
-        $this->_timestamp = version_compare(PHP_VERSION, '5.1') >= 0 ? $_SERVER['REQUEST_TIME'] : time();
+        $this->_timestamp = $_SERVER['REQUEST_TIME'];
         $this->_json['request_uri'] = $_SERVER['REQUEST_URI'];
     }
 
@@ -311,16 +311,8 @@ class ChromePhp
                 continue;
             }
             $type = $this->_getPropertyKey($property);
-
-            if (version_compare(PHP_VERSION, '5.3') >= 0) {
-                $property->setAccessible(true);
-            }
-
-            try {
-                $value = $property->getValue($object);
-            } catch (ReflectionException $e) {
-                $value = 'only PHP 5.3 can access private/protected properties';
-            }
+            $property->setAccessible(true);
+            $value = $property->getValue($object);
 
             // same instance as parent object
             if ($value === $object || in_array($value, $this->_processed, true)) {
