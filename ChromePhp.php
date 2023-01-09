@@ -402,7 +402,7 @@ class ChromePhp
      */
     protected function _encode($data)
     {
-        return base64_encode(utf8_encode(json_encode($data)));
+        return base64_encode(mb_convert_encoding(json_encode($data), "UTF-8"));
     }
 
     /**
